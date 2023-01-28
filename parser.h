@@ -62,6 +62,19 @@ class Divide: public Statement {
 		Divide();
 };
 
+class Equality: public Statement {
+	public:
+		Equality();
+};
+
+class StatementHelper {
+	public:
+		Statement* statement;
+		std::string type;
+		StatementHelper(std::string type, Statement* statement);
+
+};
+
 
 
 // Functions

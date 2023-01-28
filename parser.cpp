@@ -12,64 +12,87 @@ Ast Parser::parse(Tokens tokens) {
 
 Statement* parseStatement(Tokens& tokens){}
 
-Statement* parseNum(Tokens& tokens){
+Number* parseNum(Tokens& tokens){
 	Token current = tokens.current();
-	Statement* number = new Number(current.value);
+	Number* number = new Number(current.value);
 	tokens.eat();
 	return number;
 }
 
-Statement* parseVariable(Tokens& tokens){
+Variable* parseVariable(Tokens& tokens){
 	Token current = tokens.current();
-	Statement* variable = new Variable(current.value);
+	Variable* variable = new Variable(current.value);
 	tokens.eat();
 	return variable;
 }
 
-Statement* parseMultiplication(Tokens& tokens){
+Multiplication* parseMultiplication(Tokens& tokens){
 	Token current = tokens.current();
+
+	// TODO
 }
 
-Statement* parseFunctionCall(Tokens& tokens){
+FunctionCall* parseFunctionCall(Tokens& tokens){
 	Token current = tokens.current();
 	
 	// Todo params and then follow up on here
 
 }
 
-Statement* buildStatementInline(Tokens tokens){
+Equality* parseEquality(Tokens& tokens){
+	tokens.eat();
+	tokens.eat();
+	return new Equality();
+}
+
+Statement* buildStatement(Tokens tokens){
 	
-	std::vector<Statement*> queue;
-	std::vector<Statement*> operators;
+	std::vector<StatementHelper> queue;
+	std::vector<StatementHelper> operators;
 	// Change while condition to be not one of the statement types
 	while(!(tokens.current().get_type() == EOF && tokens.current().get_type() == NL)){
 		Token current = tokens.current();
 		if(current.get_type() == NUM){
-			Number* number = (Number*) parseNum(tokens);
-			queue.push_back(number);
+			Number* number = parseNum(tokens);
+			StatementHelper helper("number", number);
+			queue.push_back(helper);
 		}
 		else if(current.get_type() == VAR){
 			Token next = tokens.next();
 			if (next.get_type() == LPAREN){
-				FunctionCall* functionCall = (FunctionCall*)parseFunctionCall(tokens);
+				FunctionCall* functionCall = parseFunctionCall(tokens);
+				StatementHelper helper("functionCall", functionCall);
 				current = tokens.current();
 				if (current.get_type() != RPAREN) {
 					parse_error(")", current.value);
 				}
 				tokens.eat();
-				queue.push_back(functionCall);
+				queue.push_back(helper);
 			}
-			Variable* variable = (Variable*) parseVariable(tokens);
-			queue.push_back(variable);
+			Variable* variable = parseVariable(tokens);
+			StatementHelper helper("variable", variable);
+			queue.push_back(helper);
 		}
 		// Check for all the operators
 		/*
 		Highest
-		==, !=, <=, >=, <, >
-		*, /
-		+, -
+		3 ==, !=, <=, >=, <, >
+		2 **
+		1 *, /
+		0 +, -
 		Lowest
 		*/
+		// Highest Operator == is always pushed to the stack
+		else if (current.get_type() == EQUAL){
+			Token next = tokens.next();
+			if (next.get_type() != EQUAL){
+				parse_error("=", current.value);
+			}
+			Equality* equality = parseEquality(tokens);
+			StatementHelper helper("variable", equality);
+			operators.push_back(helper);
+
+		}
 	}
 
 }
@@ -95,6 +118,14 @@ Number::Number(std::string value) {
 
 Variable::Variable(std::string name){
 	this->name = name;
+}
+
+Equality::Equality(){};
+
+StatementHelper::StatementHelper(std::string type, Statement* statement){
+	this->type = type;
+	this->statement = statement;
+
 }
 
 
