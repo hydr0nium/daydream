@@ -41,6 +41,7 @@ Statement* buildStatementInline(Tokens tokens){
 	
 	std::vector<Statement*> queue;
 	std::vector<Statement*> operators;
+	// Change while condition to be not one of the statement types
 	while(!(tokens.current().get_type() == EOF && tokens.current().get_type() == NL)){
 		Token current = tokens.current();
 		if(current.get_type() == NUM){
