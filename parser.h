@@ -1,8 +1,8 @@
 #ifndef parser
 #define parser
 
-class Parser;
-enum Type;
+#include "lexer.h"
+#include <string>
 
 // Classes
 class Ast {

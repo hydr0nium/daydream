@@ -1,16 +1,19 @@
 #ifndef lexer
 #define lexer
 
+#include <vector>
+#include <string>
+
 // Token types enum
-enum TYPE {
-	NUM,
-	DES,
+enum TokenType {
+	INT,
+	VAR,
 	PLUS,
 	MINUS,
-	MULT,
-	DIV,
-	LPAR,
-	RPAR,
+	TIMES,
+	SLASH,
+	LPAREN,
+	RPAREN,
 	WS,
 	NL,
 	EQUAL,
@@ -22,10 +25,11 @@ enum TYPE {
 // Classes
 class Token{
 	public:
-		TYPE type;
+		TokenType type;
 		std::string value;
-		Token(TYPE t, std::string v);
-		TYPE get_type();
+		Token(TokenType type, std::string value);
+		TokenType get_type();
+		// Overwriting stream operator << to print the Token
 		friend std::ostream& operator<<(std::ostream& os, const Token& t);
 };
 
@@ -41,14 +45,7 @@ class Tokens {
 
 class Lexer {
 	public:
-		Tokens lex(std::string raw_input);
+		Tokens lex(std::string programm);
 };
-// Functions
-bool is_keyword(std::string lexing_string, int pos);
-Token extract_keyword(std::string lexing_string, int& pos);
-void lex_error(int pos, std::string lexing_string);
-void lex_error(std::string error_message);
-std::string enum_to_string(TYPE);
-
 
 #endif

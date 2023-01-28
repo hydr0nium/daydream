@@ -1,10 +1,14 @@
 #include "util.h"
 #include "parser.h"
+#include "lexer.h"
+#include <iostream>
+#include <string>
+#include <vector>
 
 
 Ast Parser::parse(Tokens tokens) {
 	Token next_token = tokens.next();
-	if (next_token.get_type()==DES){
+	if (next_token.get_type()==VAR){
 		
 		Assignment assign = parse_assignment(tokens);
 		std::cout << "Successfully parsed assignment with: " << assign.name.value << "=" << (assign.value)->get_value() << std::endl;
@@ -35,7 +39,7 @@ Assignment parse_assignment(Tokens& tokens) {
 
 Exp* parse_expression(Tokens& tokens) {
 	Token next_token = tokens.next();
-	if (next_token.get_type()==NUM){
+	if (next_token.get_type()==INT){
 		Int* num = new Int(next_token.value);
 		tokens.eat();
 		return num;
