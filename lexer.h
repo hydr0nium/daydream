@@ -6,7 +6,7 @@
 
 // Token types enum
 enum TokenType {
-	INT,
+	NUM,
 	VAR,
 	PLUS,
 	MINUS,
@@ -28,6 +28,7 @@ class Token{
 		TokenType type;
 		std::string value;
 		Token(TokenType type, std::string value);
+		Token();
 		TokenType get_type();
 		// Overwriting stream operator << to print the Token
 		friend std::ostream& operator<<(std::ostream& os, const Token& t);
@@ -37,10 +38,10 @@ class Tokens {
 	public:
 		std::vector<Token> tokens;
 		Tokens(std::vector<Token> t);
+		Token current();
 		Token next();
-		Tokens next(int n);
+		Token next(int index);
 		void eat();
-		void eat(int n);
 };
 
 class Lexer {

@@ -12,6 +12,9 @@ Token::Token(TokenType type, std::string value){
 			this->value = value;
 }
 
+// Constructor for Token Class empty
+Token::Token(){}
+
 // Return type of Token e.g KEYWORD or LPAREN
 TokenType Token::get_type() {
 	return type;
@@ -30,31 +33,36 @@ Tokens::Tokens(std::vector<Token> tokens){
 }
 
 // Get next token in queue without removing them
-Token Tokens::next(){
+Token Tokens::current(){
 	return tokens.front();	
+}
+
+Token Tokens::next(){
+	if ((this->current()).get_type()==EOF){
+		std::cout << "Reached end of file. Can't get next Token! Quitting";
+		exit(1);
+	}
+	return tokens.at(1);
 }
 
 
 // Get next n tokens in queue without removing them
-Tokens Tokens::next(int n) {
-	std::vector<Token> t;
-	for(int i = 0; i < n; i++){
-		t.push_back(tokens.at(i));
+Token Tokens::next(int index) {
+	Token token;
+	for(int i = 1; i < index+1; i++){
+		if (tokens.at(i).get_type()==EOF && i!=index){
+			std::cout << "Reached end of file. Can't get token at index " << index <<"! Quitting";
+			exit(1);
+		}
+		token = tokens.at(i);
 	}
-	return Tokens(t);
+	return token;
 }
 
 void Tokens::eat() {
 	tokens.erase(tokens.begin());
 }
 
-void Tokens::eat(int n) {
-
-	for (int i = 0; i < n; i++) {
-		tokens.erase(tokens.begin());
-	}
-
-}
 
 // Lexing the inputed programm
 Tokens Lexer::lex(std::string programm) {
@@ -72,7 +80,7 @@ Tokens Lexer::lex(std::string programm) {
 				current_token_value += programm[pos];
 				pos++;
 			}
-			TokenType type = INT;
+			TokenType type = NUM;
 			Token token(type, current_token_value);
 			tokens.push_back(token);
 			current_token_value = "";
@@ -107,9 +115,9 @@ Tokens Lexer::lex(std::string programm) {
 		}
 		// Scanning for White Spaces
 		else if (programm[pos]==' ') {
-			TokenType type = WS;
-			Token token(type, " ");
-			tokens.push_back(token);
+			//TokenType type = WS;
+			//Token token(type, " ");
+			//tokens.push_back(token);
 			pos++;
 		}
 		// Scanning for New Line

@@ -7,73 +7,93 @@
 
 
 Ast Parser::parse(Tokens tokens) {
-	Token next_token = tokens.next();
-	if (next_token.get_type()==VAR){
-		
-		Assignment assign = parse_assignment(tokens);
-		std::cout << "Successfully parsed assignment with: " << assign.name.value << "=" << (assign.value)->get_value() << std::endl;
-	}
-	return Ast();
+	
 }
 
-Assignment parse_assignment(Tokens& tokens) {
-	Token next_token = tokens.next();
-    Descriptor descriptor(next_token.value);
-	Exp* exp;
+Statement* parseStatement(Tokens& tokens){}
+
+Statement* parseNum(Tokens& tokens){
+	Token current = tokens.current();
+	Statement* number = new Number(current.value);
 	tokens.eat();
-	eat_whitespace(tokens);	
-	next_token = tokens.next();
-	if (next_token.get_type() == EQUAL){
-		tokens.eat();
-		eat_whitespace(tokens);
-		exp = parse_expression(tokens);
-	}
-	eat_whitespace(tokens);
-	next_token = tokens.next();
-	if(!(next_token.get_type()==NL || next_token.get_type()==END)){
-		std::cout << "There was an error parsing!" << std::endl;
-	}
-	Assignment a(descriptor, exp);
-	return a;
+	return number;
 }
 
-Exp* parse_expression(Tokens& tokens) {
-	Token next_token = tokens.next();
-	if (next_token.get_type()==INT){
-		Int* num = new Int(next_token.value);
-		tokens.eat();
-		return num;
+Statement* parseVariable(Tokens& tokens){
+	Token current = tokens.current();
+	Statement* variable = new Variable(current.value);
+	tokens.eat();
+	return variable;
+}
+
+Statement* parseMultiplication(Tokens& tokens){
+	Token current = tokens.current();
+}
+
+Statement* parseFunctionCall(Tokens& tokens){
+	Token current = tokens.current();
+	
+	// Todo params and then follow up on here
+
+}
+
+Statement* buildStatementInline(Tokens tokens){
+	
+	std::vector<Statement*> queue;
+	std::vector<Statement*> operators;
+	while(!(tokens.current().get_type() == EOF && tokens.current().get_type() == NL)){
+		Token current = tokens.current();
+		if(current.get_type() == NUM){
+			Number* number = (Number*) parseNum(tokens);
+			queue.push_back(number);
+		}
+		else if(current.get_type() == VAR){
+			Token next = tokens.next();
+			if (next.get_type() == LPAREN){
+				FunctionCall* functionCall = (FunctionCall*)parseFunctionCall(tokens);
+				current = tokens.current();
+				if (current.get_type() != RPAREN) {
+					parse_error(")", current.value);
+				}
+				tokens.eat();
+				queue.push_back(functionCall);
+			}
+			Variable* variable = (Variable*) parseVariable(tokens);
+			queue.push_back(variable);
+		}
+		// Check for all the operators
+		/*
+		Highest
+		==, !=, <=, >=, <, >
+		*, /
+		+, -
+		Lowest
+		*/
 	}
-	std::cout << "Parsing error expression not found" << std::endl;
-	exit(1);
+
 }
 
 
 // Class Definitions
 
-
 Ast::Ast(){
 
 }
 
-Descriptor::Descriptor(std::string v) {
-	value = v;
+Parser::Parser() {
+	
 }
 
-
-Assignment::Assignment(Descriptor d, Exp* v) {
-	name = d;
-	value = v;
-}
-
-Int::Int(std::string v) {
-
-	value = v;
+Statement::Statement() {
 
 }
 
-std::string Int::get_value() {
-	return value;
+Number::Number(std::string value) {
+	this->value = value;
+}
+
+Variable::Variable(std::string name){
+	this->name = name;
 }
 
 

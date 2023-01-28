@@ -16,7 +16,7 @@ void eat_whitespace(Tokens& tokens) {
 std::string enum_to_string(TokenType t) {
 
 	switch (t) {
-		case INT: return "Number";
+		case NUM: return "Number";
 		case VAR: return "Descriptor";
 		case PLUS: return "Plus";
 		case MINUS: return "Minus";
@@ -94,4 +94,12 @@ std::optional<Token> lex_keyword(std::string lexing_string, int& pos) {
 		pos = pos_before;
 		return std::nullopt;
 	}
+}
+
+void parse_error(std::string expected, std::string found){
+
+	std::cout << "Parse Error!\nTried to parse Token as " << expected << " but found: " << found;
+	std::cout << "Quitting!";
+	exit(1);
+
 }

@@ -8,78 +8,65 @@
 class Ast {
 	public:
 		Ast();
-
 };
+
 class Parser {
 	public:
-		Parser(){};
 		Ast parse(Tokens tokens);
+		Parser();
 };
-class Programm;
-class Block{
+
+class Statement {
 	public:
-		Block(){};
+		Statement();
 
 };
-class Exp {
-	public:
-		Exp(){};
-		virtual std::string get_value() = 0;
-};
-class Descriptor{
-	public:
-		std::string value;
-		Descriptor(){};
-		Descriptor(std::string v);
-	
-};
-class Int: public Exp {
-	public:
-		std::string value;
-		Int(std::string v);
-		std::string get_value();
 
-};
-class String;
-class Float;
-class LogicalEqual: public Exp {
+class Number: public Statement {
 	public:
-		Exp* left_side;
-		Exp* right_side;
-		
+		std::string value;
+		Number(std::string value);
 };
-class LogicalNot: public Exp {
+
+class FunctionCall: public Statement {
 	public:
-		Exp* left_side;
-		Exp* right_side;
+		FunctionCall();
 };
-class Function: public Exp {
+
+class Variable: public Statement {
 	public:
-		Function();
 		std::string name;
-		std::vector<Descriptor> parameters;
-		Block body;
+		Variable(std::string name);
 
 };
-class Assignment {
+
+class Multiplication: public Statement {
 	public:
-		Descriptor name;
-		Exp* value;
-		Assignment(Descriptor n, Exp* v);
-		
+		Multiplication();
 };
-class If {
+
+class Minus: public Statement {
 	public:
-		If();
-		Exp* condition;
-		Block statements_in_if; 
+		Minus();
+
 };
-class While;
-class For;
+
+class Plus: public Statement {
+	public:
+		Plus();
+
+};
+
+class Divide: public Statement {
+	public:
+		Divide();
+};
+
+
 
 // Functions
-Assignment parse_assignment(Tokens& tokens);
-Exp* parse_expression(Tokens& tokens);
+//Assignment parse_assignment(Tokens& tokens);
+//Exp* parse_expression(Tokens& tokens);
 
 
 #endif
