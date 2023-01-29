@@ -67,6 +67,11 @@ class Equality: public Statement {
 		Equality();
 };
 
+class Power: public Statement {
+	public:
+		Power();
+};
+
 class StatementHelper {
 	public:
 		Statement* statement;
