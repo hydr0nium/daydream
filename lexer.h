@@ -18,8 +18,8 @@ enum TokenType {
 	NL,
 	EQUAL,
 	KEYWORD,
+	COMMA,
 	END
-
 };
 
 // Classes
