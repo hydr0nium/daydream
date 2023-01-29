@@ -4,6 +4,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <stack>
 
 
 Ast Parser::parse(Tokens tokens) {
@@ -12,18 +13,26 @@ Ast Parser::parse(Tokens tokens) {
 
 Statement* parseStatement(Tokens& tokens){}
 
-Number* parseNum(Tokens& tokens){
+void parseNum(Tokens& tokens, std::vector<StatementHelper>& queue){
 	Token current = tokens.current();
 	Number* number = new Number(current.value);
 	tokens.eat();
-	return number;
+	StatementHelper helper("number", number);
+	queue.push_back(helper);
 }
 
-Variable* parseVariable(Tokens& tokens){
-	Token current = tokens.current();
-	Variable* variable = new Variable(current.value);
-	tokens.eat();
-	return variable;
+void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
+	Token next = tokens.next();
+	Token current;
+	if (next.get_type() == LPAREN){
+		FunctionCall* functionCall = parseFunctionCall(tokens, queue);
+	}
+	else {
+		Variable* variable = new Variable(current.value);
+		tokens.eat();
+		StatementHelper helper("variable", variable);
+		queue.push_back(helper);
+	}
 }
 
 Multiplication* parseMultiplication(Tokens& tokens){
@@ -32,47 +41,67 @@ Multiplication* parseMultiplication(Tokens& tokens){
 	// TODO
 }
 
-FunctionCall* parseFunctionCall(Tokens& tokens){
+FunctionCall* parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 	Token current = tokens.current();
 	
 	// Todo params and then follow up on here
+	// generate function object
+	FunctionCall* func = new FunctionCall();
+	StatementHelper helper("functionCall", func);
+	current = tokens.current();
+	if (current.get_type() != RPAREN) {
+		parse_error(")", current.value);
+	}
+	tokens.eat();
+	queue.push_back(helper);
 
 }
 
-Equality* parseEquality(Tokens& tokens){
+Equality* parseEquality(Tokens& tokens, std::stack<StatementHelper>& operators){
+	Token next = tokens.next();
+	Token current = tokens.current();
+	if (next.get_type() != EQUAL){
+		parse_error("=", current.value);
+	}
 	tokens.eat();
 	tokens.eat();
-	return new Equality();
+	Equality* equality = new Equality();
+	StatementHelper helper("variable", equality);
+	operators.push(helper);
+}
+
+Power* parsePower(Tokens& tokens, std::stack<StatementHelper>& operators){
+	//TODO
+	tokens.eat();
+	tokens.eat();
+	return new Power();
 }
 
 Statement* buildStatement(Tokens tokens){
 	
 	std::vector<StatementHelper> queue;
-	std::vector<StatementHelper> operators;
+	std::stack<StatementHelper> operators;
 	// Change while condition to be not one of the statement types
 	while(!(tokens.current().get_type() == EOF && tokens.current().get_type() == NL)){
 		Token current = tokens.current();
-		if(current.get_type() == NUM){
-			Number* number = parseNum(tokens);
-			StatementHelper helper("number", number);
-			queue.push_back(helper);
+		switch (current.get_type()) {
+		case NUM:
+			parseNum(tokens, queue);
+			break;
+		case VAR:
+			parseVariableOrFunctionCall(tokens, queue);
+			break;
+		case EQUAL:
+			parseEquality(tokens, operators);
+			break;
+		case TIMES:
+			parsePower(tokens, operators);
+			break;
+		default:
+			break;
 		}
-		else if(current.get_type() == VAR){
-			Token next = tokens.next();
-			if (next.get_type() == LPAREN){
-				FunctionCall* functionCall = parseFunctionCall(tokens);
-				StatementHelper helper("functionCall", functionCall);
-				current = tokens.current();
-				if (current.get_type() != RPAREN) {
-					parse_error(")", current.value);
-				}
-				tokens.eat();
-				queue.push_back(helper);
-			}
-			Variable* variable = parseVariable(tokens);
-			StatementHelper helper("variable", variable);
-			queue.push_back(helper);
-		}
+			
+	}
 		// Check for all the operators
 		/*
 		Highest
@@ -83,18 +112,6 @@ Statement* buildStatement(Tokens tokens){
 		Lowest
 		*/
 		// Highest Operator == is always pushed to the stack
-		else if (current.get_type() == EQUAL){
-			Token next = tokens.next();
-			if (next.get_type() != EQUAL){
-				parse_error("=", current.value);
-			}
-			Equality* equality = parseEquality(tokens);
-			StatementHelper helper("variable", equality);
-			operators.push_back(helper);
-
-		}
-	}
-
 }
 
 
@@ -121,6 +138,8 @@ Variable::Variable(std::string name){
 }
 
 Equality::Equality(){};
+
+Power::Power(){};
 
 StatementHelper::StatementHelper(std::string type, Statement* statement){
 	this->type = type;
