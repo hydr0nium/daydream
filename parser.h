@@ -72,6 +72,27 @@ class Power: public Statement {
 		Power();
 };
 
+class Not: public Statement {
+	public:
+		Not();
+};
+
+class And: public Statement {
+	public:
+		And();
+};
+
+class Or: public Statement {
+	public:
+		Or();
+};
+
+class Bool: public Statement {
+	public:
+		std::string truth;
+		Bool(std::string truth);
+};
+
 class StatementHelper {
 	public:
 		Statement* statement;
@@ -85,6 +106,8 @@ class StatementHelper {
 // Functions
 //Assignment parse_assignment(Tokens& tokens);
 //Exp* parse_expression(Tokens& tokens);
+Statement* buildStatement(Tokens tokens);
+void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);
 
 
 #endif
