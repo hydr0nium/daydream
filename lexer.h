@@ -19,6 +19,8 @@ enum TokenType {
 	EQUAL,
 	KEYWORD,
 	COMMA,
+	LESS,
+	GREATER,
 	END
 };
 
