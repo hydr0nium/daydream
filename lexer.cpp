@@ -141,9 +141,24 @@ Tokens Lexer::lex(std::string programm) {
 			tokens.push_back(token);
 			pos++;
 		}
+		// Scanning for Equal Sign
 		else if (programm[pos]=='='){
 			TokenType type = EQUAL;
 			Token token(type, "=");
+			tokens.push_back(token);
+			pos++;
+		}
+		// Scanning for less then
+		else if (programm[pos]=='<') {
+			TokenType type = LESS;
+			Token token(type, "<");
+			tokens.push_back(token);
+			pos++;
+		}
+		// Scanning for greater then
+		else if (programm[pos]=='>') {
+			TokenType type = GREATER;
+			Token token(type, ">");
 			tokens.push_back(token);
 			pos++;
 		}
