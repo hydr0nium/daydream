@@ -3,6 +3,7 @@
 #include "lexer.h"
 #include <iostream>
 #include <optional>
+#include "parser.h"
 
 void eat_whitespace(Tokens& tokens) {
 	Token next_token = tokens.next();
@@ -28,6 +29,9 @@ std::string enum_to_string(TokenType t) {
 		case NL: return "New Line";
 		case EQUAL: return "Equal";
 		case KEYWORD: return "Keyword";
+		case LESS: return "<";
+		case GREATER: return ">";
+		case COMMA: return ",";
 		case END: return "End of File";
 		default: lex_error("Token index not found: " + t); exit(1); 
 	}
@@ -69,7 +73,10 @@ std::optional<Token> lex_keyword(std::string lexing_string, int& pos) {
 	"true",
 	"false",
 	"print",
-	"return"
+	"return",
+	"and",
+	"or",
+	"not"
 	};
 	int lexing_string_len = lexing_string.size();
 	std::string current_token_value = "";
@@ -101,5 +108,73 @@ void parse_error(std::string expected, std::string found){
 	std::cout << "Parse Error!\nTried to parse Token as " << expected << " but found: " << found;
 	std::cout << "Quitting!";
 	exit(1);
+
+}
+
+void pushOperatorToStack(std::stack<StatementHelper>& operatorStack, StatementHelper& op, std::vector<StatementHelper>& queue){
+	int operator_prec = getOperatorPrecedence(op);
+	if (op.type == "**") {
+		while (operatorStack.size()>0 && getOperatorPrecedence(operatorStack.top())>operator_prec){
+			StatementHelper operator_top = operatorStack.top();
+			operatorStack.pop();
+			queue.push_back(operator_top);
+		}
+	}
+	else {
+		while (operatorStack.size()>0 && getOperatorPrecedence(operatorStack.top())>=operator_prec){
+			StatementHelper operator_top = operatorStack.top();
+			operatorStack.pop();
+			queue.push_back(operator_top);
+		}
+	}
+	operatorStack.push(op);
+
+}
+
+int getOperatorPrecedence(StatementHelper& op){
+
+		// Operator Precedence 
+		/*
+		Highest
+		6 not
+		5 **
+		4 /, *
+		3 + -
+		2 and
+		1 or
+		0 ==, >, <, >=, <=
+		Lowest
+		*/
+
+
+	std::string op_value = op.type;
+	if (op_value == "not"){
+		return 6;
+	}
+	else if (op_value == "**"){
+		return 5;
+	}
+	else if (op_value == "/" || op_value == "*"){
+		return 4;
+	}
+	else if (op_value == "+" || op_value == "-"){
+		return 3;
+	}
+	else if (op_value == "and"){
+		return 2;
+	}
+	else if (op_value == "or"){
+		return 1;
+	}
+	else if (op_value == "==" || op_value == ">" || op_value == "<" || op_value == ">=" || op_value == "<="){
+		return 0;
+	}
+	else if (op_value == ")") {
+		return -1;
+	}
+	else {
+		printf("Operator not found: %s", op_value);
+		exit(1);
+	}
 
 }
