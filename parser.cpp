@@ -8,7 +8,7 @@
 
 
 Ast Parser::parse(Tokens tokens) {
-	
+	buildStatement(tokens);
 }
 
 Statement* parseStatement(Tokens& tokens){}
@@ -25,7 +25,7 @@ void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& q
 	Token next = tokens.next();
 	Token current;
 	if (next.get_type() == LPAREN){
-		FunctionCall* functionCall = parseFunctionCall(tokens, queue);
+		parseFunctionCall(tokens, queue);
 	}
 	else {
 		Variable* variable = new Variable(current.value);
@@ -35,13 +35,13 @@ void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& q
 	}
 }
 
-Multiplication* parseMultiplication(Tokens& tokens){
+void parseMultiplication(Tokens& tokens){
 	Token current = tokens.current();
 
 	// TODO
 }
 
-FunctionCall* parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
+void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 	Token current = tokens.current();
 	
 	// Todo params and then follow up on here
@@ -57,7 +57,7 @@ FunctionCall* parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& qu
 
 }
 
-Equality* parseEquality(Tokens& tokens, std::stack<StatementHelper>& operators){
+void parseEquality(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue){
 	Token next = tokens.next();
 	Token current = tokens.current();
 	if (next.get_type() != EQUAL){
@@ -66,24 +66,88 @@ Equality* parseEquality(Tokens& tokens, std::stack<StatementHelper>& operators){
 	tokens.eat();
 	tokens.eat();
 	Equality* equality = new Equality();
-	StatementHelper helper("variable", equality);
-	operators.push(helper);
+	StatementHelper helper("==", equality);
+	pushOperatorToStack(operators, helper, queue);
 }
 
-Power* parsePower(Tokens& tokens, std::stack<StatementHelper>& operators){
+void parsePower(Tokens& tokens, std::stack<StatementHelper>& operators){
 	//TODO
 	tokens.eat();
 	tokens.eat();
-	return new Power();
+	
 }
+
+void parseLogicalOperator(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue){
+	Token current = tokens.current();
+	std::string keyword = current.value;
+	if (keyword=="not") {
+		Not* not_op = new Not();
+		StatementHelper helper("not", not_op);
+		tokens.eat();
+		pushOperatorToStack(operators, helper, queue);
+	}
+	else if (keyword=="and") {
+		And* and_op = new And();
+		StatementHelper helper("and", and_op);
+		tokens.eat();
+		pushOperatorToStack(operators, helper, queue);
+	}
+	else if (keyword=="or") {
+		Or* or_op = new Or();
+		StatementHelper helper("or", or_op);
+		tokens.eat();
+		pushOperatorToStack(operators, helper, queue);
+	}
+
+}
+
+void parseBool(Tokens& tokens, std::vector<StatementHelper>& queue){
+	Token current = tokens.current();
+	Bool* b = new Bool(current.value);
+	tokens.eat();
+	StatementHelper helper("bool", b);
+	queue.push_back(helper);
+}
+
+
+void parseKeyword(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue){
+	Token current = tokens.current();
+	std::string keyword = current.value;
+	if (keyword=="not" || keyword=="and" || keyword=="or") {
+		parseLogicalOperator(tokens, operators, queue);
+	}
+	else if (keyword == "true" || keyword == "false"){
+		parseBool(tokens, queue);
+	}
+	else {
+		parse_error("'not', 'and', 'or', 'true' or 'false'", current.value);
+	}
+
+}
+
+std::ostream& operator<<(std::ostream& os, const std::vector<StatementHelper> queue) {
+	for (auto helper: queue){
+		os << helper.type << std::endl;
+	}
+	return os;
+}
+
+std::ostream& operator<<(std::ostream& os, const std::stack<StatementHelper> operatorStack) {
+
+    	os << operatorStack.top().type << std::endl;
+		return os;
+}
+
 
 Statement* buildStatement(Tokens tokens){
 	
 	std::vector<StatementHelper> queue;
 	std::stack<StatementHelper> operators;
 	// Change while condition to be not one of the statement types
-	while(!(tokens.current().get_type() == EOF && tokens.current().get_type() == NL)){
-		Token current = tokens.current();
+	Token current = tokens.current();
+	while(current.type != END && current.type != NL){
+		current = tokens.current();
+		std::cout << "Parsing " << enum_to_string(current.type) << " with value " << current.value << std::endl;
 		switch (current.get_type()) {
 		case NUM:
 			parseNum(tokens, queue);
@@ -92,26 +156,37 @@ Statement* buildStatement(Tokens tokens){
 			parseVariableOrFunctionCall(tokens, queue);
 			break;
 		case EQUAL:
-			parseEquality(tokens, operators);
+			parseEquality(tokens, operators, queue);
 			break;
 		case TIMES:
+			// Change this name
 			parsePower(tokens, operators);
 			break;
-		default:
+		case KEYWORD:
+			parseKeyword(tokens, operators, queue);
+		case SLASH:
 			break;
+		case LESS:
+			break;
+		case GREATER:
+			break;
+		case PLUS:
+			break;
+		case MINUS:
+			break;
+		case LPAREN:
+			break;
+		case RPAREN:
+			break;
+		default:
+			// Temporary Solution
+			parse_error("IDK", "stuff");
 		}
+		current = tokens.current();
 			
 	}
-		// Check for all the operators
-		/*
-		Highest
-		3 ==, !=, <=, >=, <, >
-		2 **
-		1 *, /
-		0 +, -
-		Lowest
-		*/
-		// Highest Operator == is always pushed to the stack
+	std::cout << queue;
+	std::cout << operators;
 }
 
 
@@ -141,6 +216,18 @@ Equality::Equality(){};
 
 Power::Power(){};
 
+Not::Not(){};
+
+And::And(){};
+
+Or::Or(){};
+
+Bool::Bool(std::string truth){
+	this->truth = truth;
+}
+
+FunctionCall::FunctionCall(){}
+
 StatementHelper::StatementHelper(std::string type, Statement* statement){
 	this->type = type;
 	this->statement = statement;
@@ -150,7 +237,7 @@ StatementHelper::StatementHelper(std::string type, Statement* statement){
 
 int main(){
 
-	std::string input = "a  =  5";
+	std::string input = "5 var ==";
 	std::cout << "Using: " << input << std::endl;
 	Lexer l;
 	Tokens tokens = l.lex(input);
