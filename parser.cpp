@@ -9,9 +9,13 @@
 
 Ast Parser::parse(Tokens tokens) {
 	buildStatement(tokens);
+	return Ast();
 }
 
-Statement* parseStatement(Tokens& tokens){}
+Statement* parseStatement(Tokens& tokens){
+
+	return new Statement();
+}
 
 void parseNum(Tokens& tokens, std::vector<StatementHelper>& queue){
 	Token current = tokens.current();
@@ -141,6 +145,14 @@ void parseKeyword(Tokens& tokens, std::stack<StatementHelper>& operators, std::v
 
 }
 
+void parsePlus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue) {
+	Plus* op_plus = new Plus();
+	tokens.eat();
+	StatementHelper helper("+", op_plus);
+	pushOperatorToStack(operatorStack, helper, queue);
+
+}
+
 std::ostream& operator<<(std::ostream& os, const std::vector<StatementHelper> queue) {
 	for (auto helper: queue){
 		os << "Successfully Parsed: " << helper.type << std::endl;
@@ -207,6 +219,7 @@ Statement* buildStatement(Tokens tokens){
 	std::cout << queue;
 	std::cout << "Operator Stack:\n";
 	std::cout << operatorStack;
+	return new Statement;
 }
 
 
@@ -246,6 +259,8 @@ Bool::Bool(std::string truth){
 	this->truth = truth;
 }
 
+Plus::Plus(){}
+
 FunctionCall::FunctionCall(){}
 
 Multiplication::Multiplication(){}
@@ -256,20 +271,3 @@ StatementHelper::StatementHelper(std::string type, Statement* statement){
 
 }
 
-
-int main(){
-	std::cout << "-------------\nStarting Interpreter:\n";
-	std::string input = "3 * 5 ** 3 ";
-	std::cout << "Using: " << input << std::endl;
-	Lexer l;
-	std::cout << "[!] Starting Lexing:\n";
-	Tokens tokens = l.lex(input);
-	std::cout << "[o] Found these Tokens while lexing:\n";
-	for (auto token:tokens.tokens){
-		std::cout << token;
-	}
-	std::cout << "[!] Starting Parsing:\n";
-	Parser p;
-	p.parse(tokens);
-
-}
