@@ -29,9 +29,9 @@ std::string enum_to_string(TokenType t) {
 		case NL: return "New Line";
 		case EQUAL: return "Equal";
 		case KEYWORD: return "Keyword";
-		case LESS: return "<";
-		case GREATER: return ">";
-		case COMMA: return ",";
+		case LESS: return "Less";
+		case GREATER: return "Greater";
+		case COMMA: return "Comma";
 		case END: return "End of File";
 		default: lex_error("Token index not found: " + t); exit(1); 
 	}
@@ -105,8 +105,8 @@ std::optional<Token> lex_keyword(std::string lexing_string, int& pos) {
 
 void parse_error(std::string expected, std::string found){
 
-	std::cout << "Parse Error!\nTried to parse Token as " << expected << " but found: " << found;
-	std::cout << "Quitting!";
+	std::cout << "Parse Error!\nTried to parse Token as " << expected << " but found: " << found << std::endl;
+	std::cout << "Quitting!" << std::endl;
 	exit(1);
 
 }
