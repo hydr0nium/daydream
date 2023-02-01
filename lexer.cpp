@@ -115,15 +115,15 @@ Tokens Lexer::lex(std::string programm) {
 		}
 		// Scanning for White Spaces
 		else if (programm[pos]==' ') {
-			//TokenType type = WS;
-			//Token token(type, " ");
-			//tokens.push_back(token);
+			TokenType type = WS;
+			Token token(type, " ");
+			tokens.push_back(token);
 			pos++;
 		}
 		// Scanning for New Line
 		else if (programm[pos]=='\n') {
 			TokenType type = NL;
-			Token token(type, "\\n");
+			Token token(type, "newline");
 			tokens.push_back(token);
 			pos++;
 		}
@@ -162,6 +162,12 @@ Tokens Lexer::lex(std::string programm) {
 			tokens.push_back(token);
 			pos++;
 		}
+		else if (programm[pos]==',') {
+			TokenType type = COMMA;
+			Token token(type, ",");
+			tokens.push_back(token);
+			pos++;
+		}
 		// Scanning for keywords
 		else if (std::optional<Token> token_opt = lex_keyword(programm, pos); token_opt.has_value()){
 			Token token = token_opt.value();
@@ -190,5 +196,12 @@ Tokens Lexer::lex(std::string programm) {
 	TokenType type = END;
 	Token token(type, "EOF");
 	tokens.push_back(token);
-	return Tokens(tokens);
+	std::vector<Token> tokens_without_whitespace;
+	for(auto token: tokens){
+		if (!(token.type==WS)){
+			tokens_without_whitespace.push_back(token);
+		}
+	}
+
+	return Tokens(tokens_without_whitespace);
 }
