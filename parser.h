@@ -3,6 +3,7 @@
 
 #include "lexer.h"
 #include <string>
+#include <stack>
 
 // Classes
 class Ast {
@@ -104,10 +105,21 @@ class StatementHelper {
 
 
 // Functions
-//Assignment parse_assignment(Tokens& tokens);
-//Exp* parse_expression(Tokens& tokens);
 Statement* buildStatement(Tokens tokens);
 void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);
+void parseNum(Tokens& tokens, std::vector<StatementHelper>& queue);
+void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);
+void parseMultiplication(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parseEquality(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue);
+void parsePower(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parseMultOrPower(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parseLogicalOperator(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue);
+void parseBool(Tokens& tokens, std::vector<StatementHelper>& queue);
+void parseKeyword(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue);
+void parsePlus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+
+std::ostream& operator<<(std::ostream& os, const std::vector<StatementHelper> queue);
+std::ostream& operator<<(std::ostream& os, const std::stack<StatementHelper> operatorStack);
 
 
 #endif
