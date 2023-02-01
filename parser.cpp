@@ -14,7 +14,8 @@ Ast Parser::parse(Tokens tokens) {
 
 Statement* parseStatement(Tokens& tokens){
 
-	return new Statement();
+	// This is temporary such that I get no error
+	return new And();
 }
 
 void parseNum(Tokens& tokens, std::vector<StatementHelper>& queue){
@@ -27,11 +28,12 @@ void parseNum(Tokens& tokens, std::vector<StatementHelper>& queue){
 
 void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 	Token next = tokens.next();
-	Token current;
+	Token current = tokens.current();
 	if (next.get_type() == LPAREN){
 		parseFunctionCall(tokens, queue);
 	}
 	else {
+
 		Variable* variable = new Variable(current.value);
 		tokens.eat();
 		StatementHelper helper("variable", variable);
@@ -49,10 +51,53 @@ void parseMultiplication(Tokens& tokens, std::stack<StatementHelper>& operatorSt
 
 void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 	Token current = tokens.current();
-	
-	// Todo params and then follow up on here
-	// generate function object
-	FunctionCall* func = new FunctionCall();
+	std::cout << "Current Token is: " << current << std::endl;
+	Token next = tokens.next();
+	std::cout << "Next Token is: " << next << std::endl;
+	tokens.eat(); // eating function name
+	tokens.eat(); // eating left parenthesis
+
+	// This is really bad code but I have no idea on how to do this differently (Its O(2n) which should still be ok)
+	int left_paren = 1;
+	int right_paren = 0;
+	int index = 0;
+	std::vector<Token> token_list;
+	while(!(left_paren==right_paren)){
+		if (index>tokens.tokens.size()-1){
+			parse_error(")", "End of File");
+		}
+		Token token = tokens.next(index);
+		token_list.push_back(token);
+		if (token.get_type() == LPAREN){
+			left_paren++;
+		}
+		else if (token.get_type() == RPAREN){
+			right_paren++;
+		}
+		index++;
+	}
+	token_list.pop_back(); // remove right parenthesis because that is needed for checking the end
+	// index will now point to the next element after the function call
+
+	// Construct Params object for function call object
+	Tokens params_tokens(token_list);
+	std::vector<Statement*> params_list;
+	while(!params_tokens.tokens.empty()){
+		Statement* param = buildStatement(params_tokens);
+		params_list.push_back(param);
+		if(params_tokens.tokens.size()>0){
+			params_tokens.eat(); // eat comma 
+		}
+	}
+	Params params(params_list);
+
+	// Remove all tokens related to the function call
+	for (int i=0; i < index-1; i++){
+		tokens.eat();
+	}
+
+	// Construct functionCall object and eat right parenthesis
+	FunctionCall* func = new FunctionCall(params);
 	StatementHelper helper("functionCall", func);
 	current = tokens.current();
 	if (current.get_type() != RPAREN) {
@@ -155,7 +200,7 @@ void parsePlus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::
 
 std::ostream& operator<<(std::ostream& os, const std::vector<StatementHelper> queue) {
 	for (auto helper: queue){
-		os << "Successfully Parsed: " << helper.type << std::endl;
+		os << "Successfully Parsed: " << helper.statement->toString() << std::endl;
 	}
 	return os;
 }
@@ -164,7 +209,7 @@ std::ostream& operator<<(std::ostream& os, const std::stack<StatementHelper> ope
 		
 		std::stack<StatementHelper> opStack = operatorStack;
     	while(!opStack.empty()){
-			os << "Successfully Parsed: " << opStack.top().type << std::endl;
+			os << "Successfully Parsed: " << opStack.top().statement->toString() << std::endl;
 			opStack.pop();
 		}
 		return os;
@@ -177,7 +222,7 @@ Statement* buildStatement(Tokens tokens){
 	std::stack<StatementHelper> operatorStack;
 	// Change while condition to be not one of the statement types
 	Token current = tokens.current();
-	while(current.type != END && current.type != NL){
+	while(current.type != END && current.type != NL && current.type != COMMA){
 		current = tokens.current();
 		switch (current.get_type()) {
 		case NUM:
@@ -219,7 +264,8 @@ Statement* buildStatement(Tokens tokens){
 	std::cout << queue;
 	std::cout << "Operator Stack:\n";
 	std::cout << operatorStack;
-	return new Statement;
+	//This is temporary such that I get no errors:
+	return new And;
 }
 
 
@@ -241,29 +287,90 @@ Number::Number(std::string value) {
 	this->value = value;
 }
 
+std::string Number::toString(){
+	return "Number(" + this->value + ")";
+}
+
 Variable::Variable(std::string name){
 	this->name = name;
 }
 
+std::string Variable::toString(){
+	return "Variable(" + this->name + ")";
+}
+
 Equality::Equality(){};
+
+std::string Equality::toString(){
+	return "Equality()";
+}
 
 Power::Power(){};
 
+std::string Power::toString(){
+	return "Power()";
+}
+
 Not::Not(){};
+
+std::string Not::toString(){
+	return "Not()";
+}
 
 And::And(){};
 
+std::string And::toString(){
+	return "And()";
+}
+
 Or::Or(){};
+
+std::string Or::toString(){
+	return  "Or()";
+}
 
 Bool::Bool(std::string truth){
 	this->truth = truth;
 }
 
+std::string Bool::toString(){
+	return "Bool(" + this->truth + ")";
+}
+
 Plus::Plus(){}
 
-FunctionCall::FunctionCall(){}
+std::string Plus::toString(){
+	return "Plus()";
+}
+
+FunctionCall::FunctionCall(Params params){
+	this->params = params;
+}
+
+std::string FunctionCall::toString(){
+	return "FunctionCall()";
+}
 
 Multiplication::Multiplication(){}
+
+std::string Multiplication::toString(){
+	return "Multiplication()";
+}
+
+Params::Params(std::vector<Statement*> params){
+	this->params = params;
+}
+
+Params::Params(){};
+
+std::string Params::toString(){
+	std::string out = "Params( ";
+	for (auto statement: this->params){
+		out += statement->toString() + ",";
+	}
+	out += " )";
+	return out;
+}
 
 StatementHelper::StatementHelper(std::string type, Statement* statement){
 	this->type = type;
