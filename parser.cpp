@@ -35,10 +35,12 @@ void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& q
 	}
 }
 
-void parseMultiplication(Tokens& tokens){
+void parseMultiplication(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue) {
 	Token current = tokens.current();
-
-	// TODO
+	Multiplication* mult = new Multiplication();
+	tokens.eat();
+	StatementHelper helper("*", mult);
+	pushOperatorToStack(operatorStack, helper, queue);
 }
 
 void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
@@ -70,11 +72,25 @@ void parseEquality(Tokens& tokens, std::stack<StatementHelper>& operators, std::
 	pushOperatorToStack(operators, helper, queue);
 }
 
-void parsePower(Tokens& tokens, std::stack<StatementHelper>& operators){
-	//TODO
+void parsePower(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue) {
+	Power* pow = new Power();
 	tokens.eat();
 	tokens.eat();
-	
+	StatementHelper helper("**", pow);
+	pushOperatorToStack(operatorStack, helper, queue);
+}
+
+
+
+void parseMultOrPower(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue){
+	Token current = tokens.current();
+	Token next = tokens.next();
+	if (next.get_type() == TIMES){
+		parsePower(tokens, operatorStack, queue);
+	}
+	else {
+		parseMultiplication(tokens, operatorStack, queue);
+	}
 }
 
 void parseLogicalOperator(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue){
@@ -127,14 +143,18 @@ void parseKeyword(Tokens& tokens, std::stack<StatementHelper>& operators, std::v
 
 std::ostream& operator<<(std::ostream& os, const std::vector<StatementHelper> queue) {
 	for (auto helper: queue){
-		os << helper.type << std::endl;
+		os << "Successfully Parsed: " << helper.type << std::endl;
 	}
 	return os;
 }
 
 std::ostream& operator<<(std::ostream& os, const std::stack<StatementHelper> operatorStack) {
-
-    	os << operatorStack.top().type << std::endl;
+		
+		std::stack<StatementHelper> opStack = operatorStack;
+    	while(!opStack.empty()){
+			os << "Successfully Parsed: " << opStack.top().type << std::endl;
+			opStack.pop();
+		}
 		return os;
 }
 
@@ -142,12 +162,11 @@ std::ostream& operator<<(std::ostream& os, const std::stack<StatementHelper> ope
 Statement* buildStatement(Tokens tokens){
 	
 	std::vector<StatementHelper> queue;
-	std::stack<StatementHelper> operators;
+	std::stack<StatementHelper> operatorStack;
 	// Change while condition to be not one of the statement types
 	Token current = tokens.current();
 	while(current.type != END && current.type != NL){
 		current = tokens.current();
-		std::cout << "Parsing " << enum_to_string(current.type) << " with value " << current.value << std::endl;
 		switch (current.get_type()) {
 		case NUM:
 			parseNum(tokens, queue);
@@ -156,14 +175,13 @@ Statement* buildStatement(Tokens tokens){
 			parseVariableOrFunctionCall(tokens, queue);
 			break;
 		case EQUAL:
-			parseEquality(tokens, operators, queue);
+			parseEquality(tokens, operatorStack, queue);
 			break;
 		case TIMES:
-			// Change this name
-			parsePower(tokens, operators);
+			parseMultOrPower(tokens, operatorStack, queue);
 			break;
 		case KEYWORD:
-			parseKeyword(tokens, operators, queue);
+			parseKeyword(tokens, operatorStack, queue);
 		case SLASH:
 			break;
 		case LESS:
@@ -185,8 +203,10 @@ Statement* buildStatement(Tokens tokens){
 		current = tokens.current();
 			
 	}
+	std::cout << "Output queue:\n";
 	std::cout << queue;
-	std::cout << operators;
+	std::cout << "Operator Stack:\n";
+	std::cout << operatorStack;
 }
 
 
@@ -228,6 +248,8 @@ Bool::Bool(std::string truth){
 
 FunctionCall::FunctionCall(){}
 
+Multiplication::Multiplication(){}
+
 StatementHelper::StatementHelper(std::string type, Statement* statement){
 	this->type = type;
 	this->statement = statement;
@@ -236,15 +258,18 @@ StatementHelper::StatementHelper(std::string type, Statement* statement){
 
 
 int main(){
-
-	std::string input = "5 var ==";
+	std::cout << "-------------\nStarting Interpreter:\n";
+	std::string input = "3 * 5 ** 3 ";
 	std::cout << "Using: " << input << std::endl;
 	Lexer l;
+	std::cout << "[!] Starting Lexing:\n";
 	Tokens tokens = l.lex(input);
-	Parser p;
-	p.parse(tokens);
+	std::cout << "[o] Found these Tokens while lexing:\n";
 	for (auto token:tokens.tokens){
 		std::cout << token;
 	}
+	std::cout << "[!] Starting Parsing:\n";
+	Parser p;
+	p.parse(tokens);
 
 }
