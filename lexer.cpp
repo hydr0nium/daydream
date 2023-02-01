@@ -22,7 +22,7 @@ TokenType Token::get_type() {
 
 // Stream operator << for Token object to print it 
 std::ostream& operator<<(std::ostream& os, const Token& token) {
-			os << "Token(" << enum_to_string(token.type) << ", '" << token.value << "')\n";
+			os << "Token(" << enum_to_string(token.type) << ", '" << token.value << "')";
 			return os;
 		}
 
@@ -39,24 +39,21 @@ Token Tokens::current(){
 
 Token Tokens::next(){
 	if ((this->current()).get_type()==EOF){
-		std::cout << "Reached end of file. Can't get next Token! Quitting";
+		std::cout << "Reached end of file. Can't get next Token! Quitting" << std::endl;
 		exit(1);
 	}
 	return tokens.at(1);
 }
 
 
-// Get next n tokens in queue without removing them
+// Get nth token in queue without removing it
 Token Tokens::next(int index) {
 	Token token;
-	for(int i = 1; i < index+1; i++){
-		if (tokens.at(i).get_type()==EOF && i!=index){
-			std::cout << "Reached end of file. Can't get token at index " << index <<"! Quitting";
-			exit(1);
-		}
-		token = tokens.at(i);
+	if (index>tokens.size()-1){
+		std::cout << "Can not get token at index: " << index << " because tokens end at " << tokens.size()-1 << std::endl; 
+		exit(1);
 	}
-	return token;
+	return tokens.at(index);
 }
 
 void Tokens::eat() {
