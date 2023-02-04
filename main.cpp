@@ -4,7 +4,7 @@
 
 int main(){
 	std::cout << "-------------\nStarting Interpreter:\n";
-	std::string input = "function((test),test2,test3)";
+	std::string input = "3 + 4 *  5 / 25 - 4 == false <= true >= 3 and 4 or 5 and not false";
 	std::cout << "Using: " << input << std::endl;
 	Lexer l;
 	std::cout << "[!] Starting Lexing:\n";
