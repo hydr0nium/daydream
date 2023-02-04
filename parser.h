@@ -5,6 +5,16 @@
 #include <string>
 #include <stack>
 
+// Enums
+
+enum VariableType {
+	UNKNOWN,
+	INT,
+	FLOAT,
+	STRING,
+	OBJECT
+};
+
 // Classes
 class Ast {
 	public:
@@ -48,9 +58,12 @@ class FunctionCall: public Statement {
 
 class Variable: public Statement {
 	public:
-		std::string name;
+		Variable(std::string name, VariableType varType);
 		Variable(std::string name);
 		std::string toString();
+	private:
+		std::string name;
+		VariableType varType;
 
 };
 
@@ -124,6 +137,41 @@ class StatementHelper {
 		StatementHelper(std::string type, Statement* statement);
 };
 
+class LParen: public Statement {
+	public:
+		LParen();
+		std::string toString();
+};
+
+class RParen: public Statement {
+	public:
+		RParen();
+		std::string toString();
+};
+
+class Less: public Statement {
+	public:
+		Less();
+		std::string toString();
+};
+
+class Greater: public Statement {
+	public:
+		Greater();
+		std::string toString();
+};
+
+class LessEqual: public Statement {
+	public:
+		LessEqual();
+		std::string toString();
+};
+
+class GreaterEqual: public Statement {
+	public:
+		GreaterEqual();
+		std::string toString();
+};
 
 
 // Functions
@@ -139,6 +187,17 @@ void parseLogicalOperator(Tokens& tokens, std::stack<StatementHelper>& operators
 void parseBool(Tokens& tokens, std::vector<StatementHelper>& queue);
 void parseKeyword(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue);
 void parsePlus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+Params parseParams(Tokens& tokens);
+void parseGreater(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parseLess(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parseLessEqual(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parseGreaterEqual(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parsePlus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parseMinus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parseSlash(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parseRParen(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+void parseLParen(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
+
 
 std::ostream& operator<<(std::ostream& os, const std::vector<StatementHelper> queue);
 std::ostream& operator<<(std::ostream& os, const std::stack<StatementHelper> operatorStack);
