@@ -6,7 +6,6 @@
 #include <vector>
 #include <stack>
 
-
 Ast Parser::parse(Tokens tokens) {
 	buildStatement(tokens);
 	return Ast();
@@ -49,14 +48,7 @@ void parseMultiplication(Tokens& tokens, std::stack<StatementHelper>& operatorSt
 	pushOperatorToStack(operatorStack, helper, queue);
 }
 
-void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
-	Token current = tokens.current();
-	std::cout << "Current Token is: " << current << std::endl;
-	Token next = tokens.next();
-	std::cout << "Next Token is: " << next << std::endl;
-	tokens.eat(); // eating function name
-	tokens.eat(); // eating left parenthesis
-
+Params parseParams(Tokens& tokens){
 	// This is really bad code but I have no idea on how to do this differently (Its O(2n) which should still be ok)
 	int left_paren = 1;
 	int right_paren = 0;
@@ -77,6 +69,7 @@ void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 		index++;
 	}
 	token_list.pop_back(); // remove right parenthesis because that is needed for checking the end
+	token_list.push_back(Token(END, "EOF")); // Add EOF for parsing purposes
 	// index will now point to the next element after the function call
 
 	// Construct Params object for function call object
@@ -86,16 +79,27 @@ void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 		Statement* param = buildStatement(params_tokens);
 		params_list.push_back(param);
 		if(params_tokens.tokens.size()>0){
-			params_tokens.eat(); // eat comma 
+			params_tokens.eat(); // eat comma or EOF
 		}
 	}
-	Params params(params_list);
 
 	// Remove all tokens related to the function call
 	for (int i=0; i < index-1; i++){
 		tokens.eat();
 	}
 
+	Params params(params_list);
+	return params;
+}
+
+void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
+	Token current = tokens.current();
+	std::cout << "Current Token is: " << current << std::endl;
+	Token next = tokens.next();
+	std::cout << "Next Token is: " << next << std::endl;
+	tokens.eat(); // eating function name
+	tokens.eat(); // eating left parenthesis
+	Params params = parseParams(tokens);
 	// Construct functionCall object and eat right parenthesis
 	FunctionCall* func = new FunctionCall(params);
 	StatementHelper helper("functionCall", func);
@@ -198,6 +202,88 @@ void parsePlus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::
 
 }
 
+void parseMinus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue) {
+	Minus* op_minus = new Minus();
+	tokens.eat();
+	StatementHelper helper("-", op_minus);
+	pushOperatorToStack(operatorStack, helper, queue);
+
+}
+
+void parseSlash(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue){
+	Divide* div = new Divide();
+	tokens.eat();
+	StatementHelper helper("/", div);
+	pushOperatorToStack(operatorStack, helper, queue);
+}
+
+void parseLParen(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue){
+	LParen* lpar = new LParen();
+	tokens.eat();
+	StatementHelper helper("(", lpar);
+	operatorStack.push(helper);
+}
+
+void parseRParen(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue){
+	tokens.eat();
+	while(true){
+		if(operatorStack.empty()){
+			parse_error("(", tokens.current().value);
+		}
+		StatementHelper helper = operatorStack.top();
+		operatorStack.pop();
+		if (helper.type == "(") {
+			break;
+		}
+		queue.push_back(helper);
+	}
+}
+
+void parseLess(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue){
+
+	Token next = tokens.next();
+	if (next.get_type()==EQUAL){
+		parseLessEqual(tokens, operatorStack, queue);
+	}
+	else {
+		tokens.eat(); // eat <
+		Less* less = new Less();
+		StatementHelper helper("<", less);
+		pushOperatorToStack(operatorStack, helper, queue);
+	}
+
+
+}
+
+void parseLessEqual(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue){
+	tokens.eat(); // eat <
+	tokens.eat(); // eat =
+	LessEqual* lessEqual = new LessEqual();
+	StatementHelper helper("<=", lessEqual);
+	pushOperatorToStack(operatorStack, helper, queue);
+}
+
+void parseGreater(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue){
+	Token next = tokens.next();
+	if (next.get_type()==EQUAL){
+		parseGreaterEqual(tokens, operatorStack, queue);
+	}
+	else {
+		tokens.eat(); // eat >
+		Greater* greater = new Greater();
+		StatementHelper helper(">", greater);
+		pushOperatorToStack(operatorStack, helper, queue);
+	}
+}
+
+void parseGreaterEqual(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue){
+	tokens.eat(); // eat >
+	tokens.eat(); // eat =
+	GreaterEqual* greaterEqual = new GreaterEqual();
+	StatementHelper helper(">=", greaterEqual);
+	pushOperatorToStack(operatorStack, helper, queue);
+}
+
 std::ostream& operator<<(std::ostream& os, const std::vector<StatementHelper> queue) {
 	for (auto helper: queue){
 		os << "Successfully Parsed: " << helper.statement->toString() << std::endl;
@@ -239,19 +325,27 @@ Statement* buildStatement(Tokens tokens){
 			break;
 		case KEYWORD:
 			parseKeyword(tokens, operatorStack, queue);
+			break;
 		case SLASH:
+			parseSlash(tokens, operatorStack, queue);
 			break;
 		case LESS:
+			parseLess(tokens, operatorStack, queue);
 			break;
 		case GREATER:
+			parseGreater(tokens, operatorStack, queue);
 			break;
 		case PLUS:
+			parsePlus(tokens, operatorStack, queue);
 			break;
 		case MINUS:
+			parseMinus(tokens, operatorStack, queue);
 			break;
 		case LPAREN:
+			parseLParen(tokens, operatorStack, queue);
 			break;
 		case RPAREN:
+			parseRParen(tokens, operatorStack, queue);
 			break;
 		default:
 			// Temporary Solution
@@ -260,10 +354,15 @@ Statement* buildStatement(Tokens tokens){
 		current = tokens.current();
 			
 	}
+	// Pop all operators that are still on the operatorStack to the queue
+	while(!operatorStack.empty()){
+		StatementHelper helper = operatorStack.top();
+		operatorStack.pop();
+		queue.push_back(helper);
+	}
+
 	std::cout << "Output queue:\n";
 	std::cout << queue;
-	std::cout << "Operator Stack:\n";
-	std::cout << operatorStack;
 	//This is temporary such that I get no errors:
 	return new And;
 }
@@ -291,7 +390,13 @@ std::string Number::toString(){
 	return "Number(" + this->value + ")";
 }
 
-Variable::Variable(std::string name){
+Variable::Variable(std::string name, VariableType varType){
+	this->varType = varType;
+	this->name = name;
+}
+
+Variable::Variable(std::string name) {
+	this->varType = UNKNOWN;
 	this->name = name;
 }
 
@@ -376,5 +481,53 @@ StatementHelper::StatementHelper(std::string type, Statement* statement){
 	this->type = type;
 	this->statement = statement;
 
+}
+
+Minus::Minus(){}
+
+std::string Minus::toString(){
+	return "Minus()";
+}
+
+Divide::Divide(){}
+
+std::string Divide::toString(){
+	return "Divide()";
+}
+
+LParen::LParen(){};
+
+std::string LParen::toString(){
+	return "LParen()";
+}
+
+RParen::RParen(){};
+
+std::string RParen::toString(){
+	return "RParen()";
+}
+
+Less::Less(){}
+
+std::string Less::toString(){
+	return "Less()";
+}
+
+Greater::Greater(){}
+
+std::string Greater::toString(){
+	return "Greater()";
+}
+
+LessEqual::LessEqual(){}
+
+std::string LessEqual::toString(){
+	return "LessEqual()";
+}
+
+GreaterEqual::GreaterEqual(){}
+
+std::string GreaterEqual::toString(){
+	return "GreaterEqual()";
 }
 
