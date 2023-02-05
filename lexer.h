@@ -49,6 +49,7 @@ class Tokens {
 class Lexer {
 	public:
 		Tokens lex(std::string programm);
+		void print(Tokens);
 };
 
 #endif
