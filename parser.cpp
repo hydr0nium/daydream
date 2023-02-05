@@ -94,14 +94,13 @@ Params parseParams(Tokens& tokens){
 
 void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 	Token current = tokens.current();
-	std::cout << "Current Token is: " << current << std::endl;
 	Token next = tokens.next();
-	std::cout << "Next Token is: " << next << std::endl;
+	std::string functionName = current.value;
 	tokens.eat(); // eating function name
 	tokens.eat(); // eating left parenthesis
 	Params params = parseParams(tokens);
 	// Construct functionCall object and eat right parenthesis
-	FunctionCall* func = new FunctionCall(params);
+	FunctionCall* func = new FunctionCall(functionName, params);
 	StatementHelper helper("functionCall", func);
 	current = tokens.current();
 	if (current.get_type() != RPAREN) {
@@ -301,10 +300,9 @@ std::ostream& operator<<(std::ostream& os, const std::stack<StatementHelper> ope
 		return os;
 }
 
+ReversePolishNotation convertInfixToRPN(Tokens& tokens){
 
-Statement* buildStatement(Tokens tokens){
-	
-	std::vector<StatementHelper> queue;
+	std::vector<StatementHelper> rpn_queue; // output queue in reverse polish notation
 	std::stack<StatementHelper> operatorStack;
 	// Change while condition to be not one of the statement types
 	Token current = tokens.current();
@@ -312,40 +310,40 @@ Statement* buildStatement(Tokens tokens){
 		current = tokens.current();
 		switch (current.get_type()) {
 		case NUM:
-			parseNum(tokens, queue);
+			parseNum(tokens, rpn_queue);
 			break;
 		case VAR:
-			parseVariableOrFunctionCall(tokens, queue);
+			parseVariableOrFunctionCall(tokens, rpn_queue);
 			break;
 		case EQUAL:
-			parseEquality(tokens, operatorStack, queue);
+			parseEquality(tokens, operatorStack, rpn_queue);
 			break;
 		case TIMES:
-			parseMultOrPower(tokens, operatorStack, queue);
+			parseMultOrPower(tokens, operatorStack, rpn_queue);
 			break;
 		case KEYWORD:
-			parseKeyword(tokens, operatorStack, queue);
+			parseKeyword(tokens, operatorStack, rpn_queue);
 			break;
 		case SLASH:
-			parseSlash(tokens, operatorStack, queue);
+			parseSlash(tokens, operatorStack, rpn_queue);
 			break;
 		case LESS:
-			parseLess(tokens, operatorStack, queue);
+			parseLess(tokens, operatorStack, rpn_queue);
 			break;
 		case GREATER:
-			parseGreater(tokens, operatorStack, queue);
+			parseGreater(tokens, operatorStack, rpn_queue);
 			break;
 		case PLUS:
-			parsePlus(tokens, operatorStack, queue);
+			parsePlus(tokens, operatorStack, rpn_queue);
 			break;
 		case MINUS:
-			parseMinus(tokens, operatorStack, queue);
+			parseMinus(tokens, operatorStack, rpn_queue);
 			break;
 		case LPAREN:
-			parseLParen(tokens, operatorStack, queue);
+			parseLParen(tokens, operatorStack, rpn_queue);
 			break;
 		case RPAREN:
-			parseRParen(tokens, operatorStack, queue);
+			parseRParen(tokens, operatorStack, rpn_queue);
 			break;
 		default:
 			// Temporary Solution
@@ -358,11 +356,21 @@ Statement* buildStatement(Tokens tokens){
 	while(!operatorStack.empty()){
 		StatementHelper helper = operatorStack.top();
 		operatorStack.pop();
-		queue.push_back(helper);
+		rpn_queue.push_back(helper);
 	}
 
-	std::cout << "Output queue:\n";
-	std::cout << queue;
+	// Construct RPN object
+	ReversePolishNotation rpn(rpn_queue);
+	return rpn;
+
+}
+
+
+Statement* buildStatement(Tokens& tokens){
+	
+	ReversePolishNotation rpn = convertInfixToRPN(tokens);
+	std::cout << rpn.toString() << std::endl;
+	
 	//This is temporary such that I get no errors:
 	return new And;
 }
@@ -387,7 +395,7 @@ Number::Number(std::string value) {
 }
 
 std::string Number::toString(){
-	return "Number(" + this->value + ")";
+	return this->value;
 }
 
 Variable::Variable(std::string name, VariableType varType){
@@ -401,37 +409,37 @@ Variable::Variable(std::string name) {
 }
 
 std::string Variable::toString(){
-	return "Variable(" + this->name + ")";
+	return this->name;
 }
 
 Equality::Equality(){};
 
 std::string Equality::toString(){
-	return "Equality()";
+	return "==";
 }
 
 Power::Power(){};
 
 std::string Power::toString(){
-	return "Power()";
+	return "**";
 }
 
 Not::Not(){};
 
 std::string Not::toString(){
-	return "Not()";
+	return "not";
 }
 
 And::And(){};
 
 std::string And::toString(){
-	return "And()";
+	return "and";
 }
 
 Or::Or(){};
 
 std::string Or::toString(){
-	return  "Or()";
+	return  "or";
 }
 
 Bool::Bool(std::string truth){
@@ -439,27 +447,28 @@ Bool::Bool(std::string truth){
 }
 
 std::string Bool::toString(){
-	return "Bool(" + this->truth + ")";
+	return this->truth;
 }
 
 Plus::Plus(){}
 
 std::string Plus::toString(){
-	return "Plus()";
+	return "+";
 }
 
-FunctionCall::FunctionCall(Params params){
+FunctionCall::FunctionCall(std::string functionName, Params params){
+	this->functionName = functionName;
 	this->params = params;
 }
 
 std::string FunctionCall::toString(){
-	return "FunctionCall()";
+	return this->functionName + "( " + this->params.toString() + ")";
 }
 
 Multiplication::Multiplication(){}
 
 std::string Multiplication::toString(){
-	return "Multiplication()";
+	return "*";
 }
 
 Params::Params(std::vector<Statement*> params){
@@ -469,11 +478,10 @@ Params::Params(std::vector<Statement*> params){
 Params::Params(){};
 
 std::string Params::toString(){
-	std::string out = "Params( ";
+	std::string out = "";
 	for (auto statement: this->params){
 		out += statement->toString() + ",";
 	}
-	out += " )";
 	return out;
 }
 
@@ -486,48 +494,59 @@ StatementHelper::StatementHelper(std::string type, Statement* statement){
 Minus::Minus(){}
 
 std::string Minus::toString(){
-	return "Minus()";
+	return "-";
 }
 
 Divide::Divide(){}
 
 std::string Divide::toString(){
-	return "Divide()";
+	return "/";
 }
 
 LParen::LParen(){};
 
 std::string LParen::toString(){
-	return "LParen()";
+	return "(";
 }
 
 RParen::RParen(){};
 
 std::string RParen::toString(){
-	return "RParen()";
+	return ")";
 }
 
 Less::Less(){}
 
 std::string Less::toString(){
-	return "Less()";
+	return "<";
 }
 
 Greater::Greater(){}
 
 std::string Greater::toString(){
-	return "Greater()";
+	return ">";
 }
 
 LessEqual::LessEqual(){}
 
 std::string LessEqual::toString(){
-	return "LessEqual()";
+	return "<=";
 }
 
 GreaterEqual::GreaterEqual(){}
 
 std::string GreaterEqual::toString(){
-	return "GreaterEqual()";
+	return ">=";
 }
 
+ReversePolishNotation::ReversePolishNotation(std::vector<StatementHelper> rpn){
+	this->rpn = rpn;
+}
+
+std::string ReversePolishNotation::toString(){
+	std::string out = "";
+	for(auto helper: this->rpn){
+		out += helper.statement->toString() + " ";
+	}
+	return out;
+}
