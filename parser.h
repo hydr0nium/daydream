@@ -23,7 +23,7 @@ class Ast {
 
 class Parser {
 	public:
-		Ast parse(Tokens tokens);
+		Ast parse(Tokens);
 		Parser();
 };
 
@@ -36,30 +36,32 @@ class Statement {
 
 class Number: public Statement {
 	public:
-		std::string value;
-		Number(std::string value);
+		Number(std::string);
 		std::string toString();
+	private:
+		std::string value;
 };
 
 class Params: public Statement {
 	public:
 		std::vector<Statement*> params;
 		Params();
-		Params(std::vector<Statement*> params);
+		Params(std::vector<Statement*>);
 		std::string toString();
 };
 
 class FunctionCall: public Statement {
 	public:
 		Params params;
-		FunctionCall(Params params);
+		std::string functionName;
+		FunctionCall(std::string, Params);
 		std::string toString();
 };
 
 class Variable: public Statement {
 	public:
-		Variable(std::string name, VariableType varType);
-		Variable(std::string name);
+		Variable(std::string, VariableType);
+		Variable(std::string);
 		std::string toString();
 	private:
 		std::string name;
@@ -126,7 +128,7 @@ class Or: public Statement {
 class Bool: public Statement {
 	public:
 		std::string truth;
-		Bool(std::string truth);
+		Bool(std::string);
 		std::string toString();
 };
 
@@ -134,7 +136,7 @@ class StatementHelper {
 	public:
 		Statement* statement;
 		std::string type;
-		StatementHelper(std::string type, Statement* statement);
+		StatementHelper(std::string, Statement*);
 };
 
 class LParen: public Statement {
@@ -173,9 +175,18 @@ class GreaterEqual: public Statement {
 		std::string toString();
 };
 
+class ReversePolishNotation {
+	public:
+		ReversePolishNotation(std::vector<StatementHelper>);
+		std::string toString();
+	private:
+		std::vector<StatementHelper> rpn;
+
+};
+
 
 // Functions
-Statement* buildStatement(Tokens tokens);
+Statement* buildStatement(Tokens& tokens);
 void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);
 void parseNum(Tokens& tokens, std::vector<StatementHelper>& queue);
 void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);
