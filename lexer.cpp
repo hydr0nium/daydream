@@ -202,3 +202,9 @@ Tokens Lexer::lex(std::string programm) {
 
 	return Tokens(tokens_without_whitespace);
 }
+
+void Lexer::print(Tokens tokens){
+	for (auto token:tokens.tokens){
+		std::cout << token << std::endl;
+	}
+}
