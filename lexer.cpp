@@ -169,7 +169,6 @@ Tokens Lexer::lex(std::string programm) {
 		else if (std::optional<Token> token_opt = lex_keyword(programm, pos); token_opt.has_value()){
 			Token token = token_opt.value();
 			tokens.push_back(token);
-			pos++;
 		}
 		// Scanning for variable names
 		else if (isalpha(programm[pos])){
