@@ -14,7 +14,7 @@ Ast Parser::parse(Tokens tokens) {
 Statement* parseStatement(Tokens& tokens){
 
 	// This is temporary such that I get no error
-	return new And();
+	return new Or();
 }
 
 void parseNum(Tokens& tokens, std::vector<StatementHelper>& queue){
@@ -56,7 +56,7 @@ Params parseParams(Tokens& tokens){
 	std::vector<Token> token_list;
 	while(!(left_paren==right_paren)){
 		if (index>tokens.tokens.size()-1){
-			parse_error(")", "End of File");
+			parse_error(")", "End of File in params");
 		}
 		Token token = tokens.next(index);
 		token_list.push_back(token);
@@ -78,9 +78,7 @@ Params parseParams(Tokens& tokens){
 	while(!params_tokens.tokens.empty()){
 		Statement* param = buildStatement(params_tokens);
 		params_list.push_back(param);
-		if(params_tokens.tokens.size()>0){
-			params_tokens.eat(); // eat comma or EOF
-		}
+		params_tokens.eat(); // eat comma or EOF
 	}
 
 	// Remove all tokens related to the function call
@@ -178,14 +176,16 @@ void parseBool(Tokens& tokens, std::vector<StatementHelper>& queue){
 }
 
 
-void parseKeyword(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue){
+void parseKeyword(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue, bool& was_operator){
 	Token current = tokens.current();
 	std::string keyword = current.value;
 	if (keyword=="not" || keyword=="and" || keyword=="or") {
 		parseLogicalOperator(tokens, operators, queue);
+		was_operator = true;
 	}
 	else if (keyword == "true" || keyword == "false"){
 		parseBool(tokens, queue);
+		was_operator = false;
 	}
 	else {
 		parse_error("'not', 'and', 'or', 'true' or 'false'", current.value);
@@ -201,11 +201,22 @@ void parsePlus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::
 
 }
 
-void parseMinus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue) {
-	Minus* op_minus = new Minus();
-	tokens.eat();
-	StatementHelper helper("-", op_minus);
-	pushOperatorToStack(operatorStack, helper, queue);
+void parseMinus(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue, bool& was_operator) {
+	
+	if (!was_operator){		
+		Minus* op_minus = new Minus();
+		tokens.eat();
+		StatementHelper helper("-", op_minus);
+		pushOperatorToStack(operatorStack, helper, queue);
+	}
+	else {
+		tokens.eat(); // eat negative sign
+		Token current = tokens.current();
+		Number* number = new Number("-" + current.value);
+		tokens.eat();
+		StatementHelper helper("number", number);
+		queue.push_back(helper);
+	}
 
 }
 
@@ -300,50 +311,71 @@ std::ostream& operator<<(std::ostream& os, const std::stack<StatementHelper> ope
 		return os;
 }
 
+std::ostream& operator<<(std::ostream& os, const std::stack<Statement*> stm) {
+		
+		std::stack<Statement*> stm_copy = stm;
+    	while(!stm_copy.empty()){
+			os << stm_copy.top()->toString() << std::endl;
+			stm_copy.pop();
+		}
+		return os;
+}
+
 ReversePolishNotation convertInfixToRPN(Tokens& tokens){
 
 	std::vector<StatementHelper> rpn_queue; // output queue in reverse polish notation
 	std::stack<StatementHelper> operatorStack;
 	// Change while condition to be not one of the statement types
 	Token current = tokens.current();
+	bool was_operator = false; // this is a dirty way to deal with negative numbers but it works so I will leave it for now
 	while(current.type != END && current.type != NL && current.type != COMMA){
 		current = tokens.current();
 		switch (current.get_type()) {
 		case NUM:
 			parseNum(tokens, rpn_queue);
+			was_operator = false;
 			break;
 		case VAR:
 			parseVariableOrFunctionCall(tokens, rpn_queue);
+			was_operator = false;
 			break;
 		case EQUAL:
 			parseEquality(tokens, operatorStack, rpn_queue);
+			was_operator = true;
 			break;
 		case TIMES:
 			parseMultOrPower(tokens, operatorStack, rpn_queue);
+			was_operator = true;
 			break;
 		case KEYWORD:
-			parseKeyword(tokens, operatorStack, rpn_queue);
+			parseKeyword(tokens, operatorStack, rpn_queue, was_operator);
 			break;
 		case SLASH:
 			parseSlash(tokens, operatorStack, rpn_queue);
+			was_operator = true;
 			break;
 		case LESS:
 			parseLess(tokens, operatorStack, rpn_queue);
+			was_operator = true;
 			break;
 		case GREATER:
 			parseGreater(tokens, operatorStack, rpn_queue);
+			was_operator = true;
 			break;
 		case PLUS:
 			parsePlus(tokens, operatorStack, rpn_queue);
+			was_operator = true;
 			break;
 		case MINUS:
-			parseMinus(tokens, operatorStack, rpn_queue);
+			parseMinus(tokens, operatorStack, rpn_queue, was_operator);
 			break;
 		case LPAREN:
 			parseLParen(tokens, operatorStack, rpn_queue);
+			// Parenthesis don't change if there was a operator or not
 			break;
 		case RPAREN:
 			parseRParen(tokens, operatorStack, rpn_queue);
+			// Parenthesis don't change if there was a operator or not
 			break;
 		default:
 			// Temporary Solution
@@ -365,18 +397,204 @@ ReversePolishNotation convertInfixToRPN(Tokens& tokens){
 
 }
 
+Statement* parseRPN(ReversePolishNotation rpn){
+	std::stack<Statement*> statement_stack;
+	for(auto helper: rpn.getRpnVector()){
+		std::string statement_type = helper.type;
+		Statement* stm = helper.statement;
+		if (statement_type == "number") {
+			statement_stack.push(stm);
+		}
+		else if (statement_type == "variable"){
+			statement_stack.push(stm);
+		}
+		else if (statement_type == "bool") {
+			statement_stack.push(stm);
+		}
+		else if (statement_type == "functionCall") {
+			statement_stack.push(stm);
+		}
+		else if (statement_type == "+") {
+			if( !(statement_stack.size()>=2) ) {
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form an addition object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			Plus* plus_stm = new Plus(LHS, RHS);
+			statement_stack.push(plus_stm);
+			delete stm;
+		}
+		else if (statement_type == "*") { // Build Multiplication Object
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a multiplication object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			Multiplication* mult_stm = new Multiplication(LHS, RHS);
+			statement_stack.push(mult_stm);
+			delete stm;
+		}
+		else if (statement_type == "-") { // Build Minus Object
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a subtraction object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			Minus* minus_stm = new Minus(LHS, RHS);
+			statement_stack.push(minus_stm);
+			delete stm;
+		}
+		else if (statement_type == "/") { // Build Division
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a division object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			Divide* div_stm = new Divide(LHS, RHS);
+			statement_stack.push(div_stm);
+			delete stm;
+		}
+		else if (statement_type == "**") { // Build Power Object
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a power object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			Power* pow_stm = new Power(LHS, RHS);
+			statement_stack.push(pow_stm);
+			delete stm;
+		}
+		else if (statement_type == "and") { // Build logical and
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a logical and object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			And* and_stm = new And(LHS, RHS);
+			statement_stack.push(and_stm);
+			delete stm;
+		}
+		else if (statement_type == "not") { // Build logical not
+			if ( !(statement_stack.size()>=1) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a logical not object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Not* not_stm = new Not(RHS);
+			statement_stack.push(not_stm);
+			delete stm;
+		}
+		else if (statement_type == "or") { // Build logical or
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a logical or object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			Or* or_stm = new Or(LHS, RHS);
+			statement_stack.push(or_stm);
+			delete stm;
+		}
+		else if (statement_type == "<") { // Build less than
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a less than object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			Less* less_stm = new Less(LHS, RHS);
+			statement_stack.push(less_stm);
+			delete stm;
+		}
+		else if (statement_type == "<=") { // Build less equal than
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a less or equal than object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			LessEqual* lessEq_stm = new LessEqual(LHS, RHS);
+			statement_stack.push(lessEq_stm);
+			delete stm;
+		}
+		else if (statement_type == ">") { // Build greater than
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a greater than object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			Greater* greater_stm = new Greater(LHS, RHS);
+			statement_stack.push(greater_stm);
+			delete stm;
+		}
+		else if (statement_type == ">=") { // Build greater equal than
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a greater or equal than object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			GreaterEqual* greaterEq_stm = new GreaterEqual(LHS, RHS);
+			statement_stack.push(greaterEq_stm);
+			delete stm;
+		}
+		else if (statement_type == "==") { // Build equality
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a equality object");
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			Equality* eq_stm = new Equality(LHS, RHS);
+			statement_stack.push(eq_stm);
+			delete stm;
+		}
+		
+		//std::cout << "Statement Stack:" << std::endl;
+		//std::cout << statement_stack << std::endl;
+
+
+	}
+	if (!(statement_stack.size()==1)){
+		parse_error("Could not form AST from RPN. Statement Stack had more than one element. Expected was one.");
+	}
+	Statement* return_stm = statement_stack.top();
+	statement_stack.pop();
+	return return_stm;
+}
 
 Statement* buildStatement(Tokens& tokens){
 	
 	ReversePolishNotation rpn = convertInfixToRPN(tokens);
-	std::cout << rpn.toString() << std::endl;
+	Statement* stm = parseRPN(rpn);
+	std::cout << "In Function Notation:\n";
+	std::cout << stm->toTreeString() << std::endl;
 	
 	//This is temporary such that I get no errors:
-	return new And;
+	return stm;
 }
 
 
-// Class Definitions
+// ------------------------------------------------ Class Definitions ---------------------------------------------
 
 Ast::Ast(){
 
@@ -398,6 +616,10 @@ std::string Number::toString(){
 	return this->value;
 }
 
+std::string Number::toTreeString() {
+	return "Number(" + this->value + ")";
+}
+
 Variable::Variable(std::string name, VariableType varType){
 	this->varType = varType;
 	this->name = name;
@@ -412,34 +634,83 @@ std::string Variable::toString(){
 	return this->name;
 }
 
-Equality::Equality(){};
+std::string Variable::toTreeString(){
+	return "Variable(" + this->name + ")";
+}
+
+Equality::Equality(){}
+
+Equality::Equality(Statement* LHS, Statement* RHS) {
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
 
 std::string Equality::toString(){
 	return "==";
 }
 
+std::string Equality::toTreeString(){
+	return "Equality(" + LHS->toTreeString() + "," + RHS->toTreeString() + ")";
+}
+
 Power::Power(){};
+
+Power::Power(Statement* LHS, Statement* RHS) {
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
 
 std::string Power::toString(){
 	return "**";
 }
 
+std::string Power::toTreeString() {
+	return "Power(" + LHS->toTreeString() + "," + RHS->toTreeString() + ")";
+}
+
 Not::Not(){};
+
+Not::Not(Statement* RHS){
+	this->RHS = RHS;
+}
 
 std::string Not::toString(){
 	return "not";
 }
 
+std::string Not::toTreeString() {
+	return "Not(" + this->RHS->toTreeString() + ")";
+}
+
 And::And(){};
+
+And::And(Statement* LHS, Statement* RHS){
+	this->LHS = LHS;
+	this->RHS = RHS;
+
+}
 
 std::string And::toString(){
 	return "and";
 }
 
+std::string And::toTreeString() {
+	return "And("+ this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+}
+
 Or::Or(){};
+
+Or::Or(Statement* LHS, Statement* RHS){
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
 
 std::string Or::toString(){
 	return  "or";
+}
+
+std::string Or::toTreeString() {
+	return "Or(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
 }
 
 Bool::Bool(std::string truth){
@@ -450,10 +721,23 @@ std::string Bool::toString(){
 	return this->truth;
 }
 
+std::string Bool::toTreeString() {
+	return "Bool(" + this->truth + ")";
+}
+
 Plus::Plus(){}
+
+Plus::Plus(Statement* LHS, Statement* RHS){
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
 
 std::string Plus::toString(){
 	return "+";
+}
+
+std::string Plus::toTreeString() {
+	return "Plus(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
 }
 
 FunctionCall::FunctionCall(std::string functionName, Params params){
@@ -462,13 +746,26 @@ FunctionCall::FunctionCall(std::string functionName, Params params){
 }
 
 std::string FunctionCall::toString(){
-	return this->functionName + "( " + this->params.toString() + ")";
+	return this->functionName + "(" + this->params.toString() + ")";
+}
+
+std::string FunctionCall::toTreeString() {
+	return "FunctionCall(" + this->functionName + ";" + this->params.toTreeString() + ")";
 }
 
 Multiplication::Multiplication(){}
 
+Multiplication::Multiplication(Statement* LHS, Statement* RHS){
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
+
 std::string Multiplication::toString(){
 	return "*";
+}
+
+std::string Multiplication::toTreeString() {
+	return "Multiplication(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
 }
 
 Params::Params(std::vector<Statement*> params){
@@ -482,8 +779,19 @@ std::string Params::toString(){
 	for (auto statement: this->params){
 		out += statement->toString() + ",";
 	}
+	out.pop_back();
 	return out;
 }
+
+std::string Params::toTreeString(){
+	std::string param_string = "";
+	for (auto statement: this->params){
+		param_string += statement->toTreeString() + ",";
+	}
+	param_string.pop_back();
+	return "Params(" + param_string + ")";
+}
+
 
 StatementHelper::StatementHelper(std::string type, Statement* statement){
 	this->type = type;
@@ -493,14 +801,32 @@ StatementHelper::StatementHelper(std::string type, Statement* statement){
 
 Minus::Minus(){}
 
+Minus::Minus(Statement* LHS, Statement* RHS){
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
+
 std::string Minus::toString(){
 	return "-";
 }
 
+std::string Minus::toTreeString() {
+	return "Minus(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+}
+
 Divide::Divide(){}
+
+Divide::Divide(Statement* LHS, Statement* RHS){
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
 
 std::string Divide::toString(){
 	return "/";
+}
+
+std::string Divide::toTreeString() {
+	return "Divide(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
 }
 
 LParen::LParen(){};
@@ -509,34 +835,78 @@ std::string LParen::toString(){
 	return "(";
 }
 
+std::string LParen::toTreeString() {
+	return "";
+}
+
 RParen::RParen(){};
 
 std::string RParen::toString(){
 	return ")";
 }
 
+std::string RParen::toTreeString() {
+	return "";
+}
+
 Less::Less(){}
+
+Less::Less(Statement* LHS, Statement* RHS){
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
 
 std::string Less::toString(){
 	return "<";
 }
 
+std::string Less::toTreeString() {
+	return "Less(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+}
+
 Greater::Greater(){}
+
+Greater::Greater(Statement* LHS, Statement* RHS){
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
 
 std::string Greater::toString(){
 	return ">";
 }
 
+std::string Greater::toTreeString() {
+	return "Greater(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+}
+
 LessEqual::LessEqual(){}
+
+LessEqual::LessEqual(Statement* LHS, Statement* RHS){
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
 
 std::string LessEqual::toString(){
 	return "<=";
 }
 
+std::string LessEqual::toTreeString() {
+	return "LessEqual(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+}
+
 GreaterEqual::GreaterEqual(){}
+
+GreaterEqual::GreaterEqual(Statement* LHS, Statement* RHS){
+	this->LHS = LHS;
+	this->RHS = RHS;
+}
 
 std::string GreaterEqual::toString(){
 	return ">=";
+}
+
+std::string GreaterEqual::toTreeString(){
+	return "GreaterEqual(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
 }
 
 ReversePolishNotation::ReversePolishNotation(std::vector<StatementHelper> rpn){
@@ -549,4 +919,8 @@ std::string ReversePolishNotation::toString(){
 		out += helper.statement->toString() + " ";
 	}
 	return out;
+}
+
+std::vector<StatementHelper> ReversePolishNotation::getRpnVector(){
+	return this->rpn;
 }
