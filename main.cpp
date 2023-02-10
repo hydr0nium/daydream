@@ -4,7 +4,7 @@
 
 int main(){
 	std::cout << "-------------\nStarting Interpreter:\n";
-	std::string input = "test_func(5+5==10, true)";
+	std::string input = "test_func(-5+15==10, true)";
 	// Input will turn into:
 	// 3 4 5 * 25 / + 4 - false == true <= 3 4 and 5 false not and or >=
 	std::cout << "Using: " << input << std::endl;
