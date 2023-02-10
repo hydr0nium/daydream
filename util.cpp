@@ -4,6 +4,7 @@
 #include <iostream>
 #include <optional>
 #include "parser.h"
+#include "statement.h"
 
 void eat_whitespace(Tokens& tokens) {
 	Token next_token = tokens.next();
