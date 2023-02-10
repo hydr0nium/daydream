@@ -58,7 +58,7 @@ void lex_error(int pos, std::string lexing_string) {
 
 void lex_error(std::string error_message) {
 
-	std::cout << error_message;
+	std::cout << error_message << std::endl;
 	exit(1);
 
 }
@@ -107,6 +107,13 @@ void parse_error(std::string expected, std::string found){
 
 	std::cout << "Parse Error!\nTried to parse Token as " << expected << " but found: " << found << std::endl;
 	std::cout << "Quitting!" << std::endl;
+	exit(1);
+
+}
+
+void parse_error(std::string error_message) {
+
+	std::cout << error_message << std::endl;
 	exit(1);
 
 }
