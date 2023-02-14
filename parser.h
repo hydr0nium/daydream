@@ -44,15 +44,61 @@ class Statement: public Expression {
 class VariableDeclaration: public Expression {
 
 	public:
-		VariableDeclaration();
+		VariableDeclaration(std::string, Statement*);
+		std::string toTreeString();
 	private:
 		std::string var_name;
 		Statement* assigned_stm;
 
 };
 
+class Block: public Expression {
+
+	public:
+		Block(std::vector<Expression*>);
+		std::string toTreeString();
+	private:
+		std::vector<Expression*> expressions;
+
+};
+
+class If: public Expression {
+	public:
+		If(Statement*, Block*);
+		std::string toTreeString();
+	private:
+		Statement* condition;
+		Block* body;
+};
+
+class While: public Expression {
+	public:
+		While(Statement*, Block*);
+		std::string toTreeString();
+	private:
+		Statement* condition;
+		Block* body;
+};
+
+class For: public Expression {
+	public:
+		For(VariableDeclaration*, Statement*, VariableDeclaration*, Block*);
+		std::string toTreeString();
+	private:
+		VariableDeclaration* init;
+		Statement* condition;
+		VariableDeclaration* changer;
+		Block* body;
+};
+
 
 // Functions
+Expression* parseDeclaration(Tokens&);
+Expression* parseIf(Tokens&);
+Expression* parseLine(Tokens&);
+Expression* parseWhile(Tokens&);
+Expression* parseFor(Tokens&);
+Block* parseBody(Tokens&, bool);
 
 
 
