@@ -16,11 +16,14 @@ enum TokenType {
 	RPAREN,
 	WS,
 	NL,
+	TAB,
 	EQUAL,
 	KEYWORD,
 	COMMA,
+	COLON,
 	LESS,
 	GREATER,
+	SEMICOLON,
 	END
 };
 

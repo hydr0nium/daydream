@@ -124,6 +124,13 @@ Tokens Lexer::lex(std::string programm) {
 			tokens.push_back(token);
 			pos++;
 		}
+		// Scann for tab
+		else if (programm[pos]=='\t') {
+			TokenType type = TAB;
+			Token token(type, "tab");
+			tokens.push_back(token);
+			pos++;
+		}
 		// Scanning for Left Parenthesis
 		else if (programm[pos]=='('){
 			TokenType type = LPAREN;
@@ -159,9 +166,24 @@ Tokens Lexer::lex(std::string programm) {
 			tokens.push_back(token);
 			pos++;
 		}
+		// Scanning for comma
 		else if (programm[pos]==',') {
 			TokenType type = COMMA;
 			Token token(type, ",");
+			tokens.push_back(token);
+			pos++;
+		}
+		// Scanning for column
+		else if (programm[pos]==':'){
+			TokenType type = COLON;
+			Token token(type, ":");
+			tokens.push_back(token);
+			pos++;
+		}
+		// Scanning for semicolon
+		else if (programm[pos]==';'){
+			TokenType type = SEMICOLON;
+			Token token(type, ";");
 			tokens.push_back(token);
 			pos++;
 		}
@@ -194,7 +216,7 @@ Tokens Lexer::lex(std::string programm) {
 	tokens.push_back(token);
 	std::vector<Token> tokens_without_whitespace;
 	for(auto token: tokens){
-		if (!(token.type==WS)){
+		if (token.get_type() != WS && token.get_type() != TAB){
 			tokens_without_whitespace.push_back(token);
 		}
 	}
