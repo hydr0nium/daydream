@@ -73,11 +73,11 @@ std::optional<Token> lex_keyword(std::string lexing_string, int& pos) {
 	"while",
 	"true",
 	"false",
-	"print",
 	"return",
 	"and",
 	"or",
-	"not"
+	"not",
+	"end"
 	};
 	int lexing_string_len = lexing_string.size();
 	std::string current_token_value = "";
@@ -126,6 +126,7 @@ void pushOperatorToStack(std::stack<StatementHelper>& operatorStack, StatementHe
 			StatementHelper operator_top = operatorStack.top();
 			operatorStack.pop();
 			queue.push_back(operator_top);
+			
 		}
 	}
 	else {
@@ -154,7 +155,6 @@ int getOperatorPrecedence(StatementHelper& op){
 		Lowest
 		*/
 
-
 	std::string op_value = op.type;
 	if (op_value == "not"){
 		return 6;
@@ -177,11 +177,11 @@ int getOperatorPrecedence(StatementHelper& op){
 	else if (op_value == "==" || op_value == ">" || op_value == "<" || op_value == ">=" || op_value == "<="){
 		return 0;
 	}
-	else if (op_value == ")") {
+	else if (op_value == "(") {
 		return -1;
 	}
 	else {
-		printf("Operator not found: %s", op_value);
+		std::cout << "Operator not found: " +  op_value << std::endl;
 		exit(1);
 	}
 
