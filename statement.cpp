@@ -99,7 +99,7 @@ void parseEquality(Tokens& tokens, std::stack<StatementHelper>& operators, std::
 	Token next = tokens.next();
 	Token current = tokens.current();
 	if (next.get_type() != EQUAL){
-		parse_error("=", current.value);
+		parse_error("=", next.value);
 	}
 	tokens.eat();
 	tokens.eat();
