@@ -29,7 +29,7 @@ ReversePolishNotation convertInfixToRPN(Tokens& tokens){
 	// Change while condition to be not one of the statement types
 	Token current = tokens.current();
 	bool was_operator = true; // this is a dirty way to deal with negative numbers but it works so I will leave it for now
-	while(current.type != END && current.type != NL && current.type != COMMA){
+	while(current.type != END && current.type != NL && current.type != COMMA && current.get_type() != COLON && current.value != "end" && current.get_type() != SEMICOLON){
 		current = tokens.current();
 		switch (current.get_type()) {
 		case NUM:
@@ -69,6 +69,7 @@ ReversePolishNotation convertInfixToRPN(Tokens& tokens){
 			break;
 		case MINUS:
 			parseMinus(tokens, operatorStack, rpn_queue, was_operator);
+			// was_operator set in parseMinus
 			break;
 		case LPAREN:
 			parseLParen(tokens, operatorStack, rpn_queue);
