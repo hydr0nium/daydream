@@ -217,8 +217,18 @@ class GreaterEqual: public Statement {
 		Statement* RHS;
 };
 
+class String: public Statement {
+    public:
+        String(std::string);
+        std::string toString();
+        std::string toTreeString();
+    private:
+        std::string value;
+};
+
 void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);
 void parseNum(Tokens& tokens, std::vector<StatementHelper>& queue);
+void parseString(Tokens&, std::vector<StatementHelper>&);
 void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);
 void parseMultiplication(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
 void parseEquality(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue);
