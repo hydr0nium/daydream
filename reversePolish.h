@@ -15,8 +15,8 @@ class ReversePolishNotation {
 		std::vector<StatementHelper> rpn;
 };
 
-ReversePolishNotation convertInfixToRPN(Tokens&);
-Statement* parseRPN(ReversePolishNotation rpn);
+ReversePolishNotation convertInfixToRPN(Tokens&, Token*);
+Statement* parseRPN(ReversePolishNotation, Tokens);
 
 
 #endif
