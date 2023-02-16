@@ -43,7 +43,7 @@ Params parseParams(Tokens& tokens){
 	std::vector<Token> token_list;
 	while(!(left_paren==right_paren)){
 		if (index>tokens.tokens.size()-1){
-			parse_error(")", "End of File in params");
+			parse_error(")", "End of File in params", tokens);
 		}
 		Token token = tokens.next(index);
 		token_list.push_back(token);
@@ -59,7 +59,7 @@ Params parseParams(Tokens& tokens){
 	token_list.push_back(Token(END, "EOF")); // Add EOF for parsing purposes
 	// index will now point to the next element after the function call
 	// Construct Params object for function call object
-	Tokens params_tokens(token_list);
+	Tokens params_tokens(token_list, "");
 	std::vector<Statement*> params_list;
 	while(!params_tokens.tokens.empty()){
 		Statement* param = buildStatement(params_tokens);
@@ -88,7 +88,7 @@ void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 	StatementHelper helper("functionCall", func);
 	current = tokens.current();
 	if (current.get_type() != RPAREN) {
-		parse_error(")", current.value);
+		parse_error(")", current.value, tokens);
 	}
 	tokens.eat();
 	queue.push_back(helper);
@@ -98,8 +98,9 @@ void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 void parseEquality(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue){
 	Token next = tokens.next();
 	Token current = tokens.current();
+
 	if (next.get_type() != EQUAL){
-		parse_error("=", next.value);
+		parse_error("=", next.value, tokens);
 	}
 	tokens.eat();
 	tokens.eat();
@@ -174,7 +175,7 @@ void parseKeyword(Tokens& tokens, std::stack<StatementHelper>& operators, std::v
 		was_operator = false;
 	}
 	else {
-		parse_error("'not', 'and', 'or', 'true' or 'false'", current.value);
+		parse_error("'not', 'and', 'or', 'true' or 'false'", current.value, tokens);
 	}
 
 }
@@ -224,7 +225,7 @@ void parseRParen(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std
 	tokens.eat();
 	while(true){
 		if(operatorStack.empty()){
-			parse_error("(", tokens.current().value);
+			parse_error("(", tokens.current().value, tokens);
 		}
 		StatementHelper helper = operatorStack.top();
 		operatorStack.pop();
