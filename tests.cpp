@@ -25,6 +25,7 @@ void run_tests(){
     lex_slash();
     lex_minus();
     lex_newline();
+    lex_string();
     std::cout << "[!] All tests passed\n";
     
 }
@@ -184,4 +185,17 @@ void lex_variable() {
     input = "function(";
     tokens = lexr.lex(input);
     assert(tokens.current().value=="function" && tokens.current().type == VAR);
+}
+
+void lex_string() {
+    std::string input = "\"hello world\"";
+    Lexer lexr;
+    Tokens tokens = lexr.lex(input);
+    assert(tokens.current().value=="hello world" && tokens.current().get_type() == STRING_TOKEN);
+
+    input = "'hello world 2'";
+    tokens = lexr.lex(input);
+    assert(tokens.current().value=="hello world 2" && tokens.current().get_type() == STRING_TOKEN);
+
+
 }
