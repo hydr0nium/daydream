@@ -195,7 +195,7 @@ Tokens Lexer::lex(std::string programm) {
 		}
 		// Scanning for single quote 
 		else if (programm[pos]=='\''){
-			TokenType type = STRING_TOKEN;
+			TokenType type = STRING;
 			std::string value = "";
 			pos++;
 
@@ -210,7 +210,7 @@ Tokens Lexer::lex(std::string programm) {
 		}
 		// Scanning for double quotes
 		else if (programm[pos]=='"') {
-			TokenType type = STRING_TOKEN;
+			TokenType type = STRING;
 			std::string value = "";
 			pos++;
 
@@ -271,6 +271,10 @@ int Tokens::getLineNumber() {
 	return this->lineNumber;
 }
 
+std::string Token::get_value() {
+	return this->value;
+}
+
 std::string Tokens::getCodeContext() {
 
 	// the line number feature is kinda broken will fix that
@@ -298,6 +302,8 @@ std::string Tokens::getCodeContext() {
 	return programm_context;
 
 }
+
+
 
 void Tokens::print() {
 	for (auto token: this->tokens) {

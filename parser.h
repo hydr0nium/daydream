@@ -8,11 +8,11 @@
 // Enums
 
 enum VariableType {
-	UNKNOWN,
-	INT,
-	FLOAT,
-	STRING,
-	OBJECT
+	UNKNOWN_TYPE,
+	INT_TYPE,
+	FLOAT_TYPE,
+	STRING_TYPE,
+	OBJECT_TYPE
 };
 
 // Classes

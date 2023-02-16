@@ -24,7 +24,7 @@ enum TokenType {
 	LESS,
 	GREATER,
 	SEMICOLON,
-	STRING_TOKEN,
+	STRING,
 	END
 };
 
@@ -36,6 +36,7 @@ class Token{
 		Token(TokenType type, std::string value);
 		Token();
 		TokenType get_type();
+		std::string get_value();
 		// Overwriting stream operator << to print the Token
 		friend std::ostream& operator<<(std::ostream& os, const Token& t);
 };
