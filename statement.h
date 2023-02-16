@@ -217,7 +217,6 @@ class GreaterEqual: public Statement {
 		Statement* RHS;
 };
 
-Statement* buildStatement(Tokens& tokens);
 void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);
 void parseNum(Tokens& tokens, std::vector<StatementHelper>& queue);
 void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);
