@@ -28,8 +28,10 @@ std::ostream& operator<<(std::ostream& os, const Token& token) {
 
 
 // Construtor for Tokens Class
-Tokens::Tokens(std::vector<Token> tokens){
+Tokens::Tokens(std::vector<Token> tokens, std::string source_code){
 	this->tokens = tokens;	
+	this->lineNumber = 1;
+	this->source_code = source_code;
 }
 
 // Get next token in queue without removing them
@@ -57,6 +59,10 @@ Token Tokens::next(int index) {
 }
 
 void Tokens::eat() {
+	Token current = this->current();
+	if (current.get_type() == NL) {
+		this->lineNumber += 1;
+	}
 	tokens.erase(tokens.begin());
 }
 
@@ -187,6 +193,37 @@ Tokens Lexer::lex(std::string programm) {
 			tokens.push_back(token);
 			pos++;
 		}
+		// Scanning for single quote 
+		else if (programm[pos]=='\''){
+			TokenType type = STRING_TOKEN;
+			std::string value = "";
+			pos++;
+
+			// "Start reading string until another ' is read"
+			while(programm[pos]!='\''){
+				value += programm[pos];
+				pos++;
+			}
+			Token token(type, value);
+			tokens.push_back(token);
+			pos++;
+		}
+		// Scanning for double quotes
+		else if (programm[pos]=='"') {
+			TokenType type = STRING_TOKEN;
+			std::string value = "";
+			pos++;
+
+			// "Start reading string until another " is read"
+			while(programm[pos]!='"'){
+				value += programm[pos];
+				pos++;
+			}
+			Token token(type, value);
+			tokens.push_back(token);
+			pos++;
+		}
+
 		// Scanning for keywords
 		else if (std::optional<Token> token_opt = lex_keyword(programm, pos); token_opt.has_value()){
 			Token token = token_opt.value();
@@ -221,11 +258,49 @@ Tokens Lexer::lex(std::string programm) {
 		}
 	}
 
-	return Tokens(tokens_without_whitespace);
+	return Tokens(tokens_without_whitespace, programm);
 }
 
 void Lexer::print(Tokens tokens){
 	for (auto token:tokens.tokens){
 		std::cout << token << std::endl;
+	}
+}
+
+int Tokens::getLineNumber() {
+	return this->lineNumber;
+}
+
+std::string Tokens::getCodeContext() {
+
+	// the line number feature is kinda broken will fix that
+	int ln = 1;
+	int context = 2;
+	std::string programm_context = "...\n" + std::to_string(ln) + "     ";
+	if (ln == this->getLineNumber()){
+				programm_context += "--> ";
+	}
+	for (auto chr: this->source_code){
+		if (ln >= this->getLineNumber()-context && ln<= this->getLineNumber()+context) {
+			programm_context += chr;
+		}	
+		if (chr == '\n'){
+			ln++;
+			if (ln == this->getLineNumber()){
+				programm_context = programm_context + std::to_string(ln) + " --> ";
+			}
+			else {
+				programm_context = programm_context + std::to_string(ln) + "     ";
+			}
+		}
+	}
+	programm_context += "\n...";
+	return programm_context;
+
+}
+
+void Tokens::print() {
+	for (auto token: this->tokens) {
+		std::cout << token.value << std::endl;
 	}
 }
