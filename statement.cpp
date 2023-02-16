@@ -281,6 +281,15 @@ void parseGreaterEqual(Tokens& tokens, std::stack<StatementHelper>& operatorStac
 	pushOperatorToStack(operatorStack, helper, queue);
 }
 
+void parseString(Tokens& tokens, std::vector<StatementHelper>& queue) {
+    Token current = tokens.current();
+    String* str = new String(current.get_value());
+    tokens.eat(); // eat string token;
+    StatementHelper helper("string", str);
+    queue.push_back(helper);
+
+}
+
 
 std::ostream& operator<<(std::ostream& os, const std::vector<StatementHelper> queue) {
 	for (auto helper: queue){
@@ -319,7 +328,7 @@ Variable::Variable(std::string name, VariableType varType){
 }
 
 Variable::Variable(std::string name) {
-	this->varType = UNKNOWN;
+	this->varType = UNKNOWN_TYPE;
 	this->name = name;
 }
 
@@ -600,4 +609,16 @@ std::string GreaterEqual::toString(){
 
 std::string GreaterEqual::toTreeString(){
 	return "GreaterEqual(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+}
+
+String::String(std::string value) {
+    this->value = value;
+}
+
+std::string String::toString() {
+    return this->value;
+}
+
+std::string String::toTreeString() {
+    return "String(" + this->value + ")";
 }
