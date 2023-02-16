@@ -18,5 +18,6 @@ void lex_times();
 void lex_slash();
 void lex_minus();
 void lex_newline();
+void lex_string();
 
 #endif
