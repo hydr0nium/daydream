@@ -98,6 +98,8 @@ Expression* parseIf(Tokens&);
 Expression* parseLine(Tokens&);
 Expression* parseWhile(Tokens&);
 Expression* parseFor(Tokens&);
+Expression* parseForChangerDeclaration(Tokens&);
+Statement* buildStatement(Tokens&, Token* = NULL);
 Block* parseBody(Tokens&, bool);
 
 
