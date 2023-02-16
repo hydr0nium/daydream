@@ -4,7 +4,7 @@
 \
 int main(){
 	std::cout << "-------------\nStarting Interpreter:\n";
-	std::string input = "for (i=3;i<=10;i=i+1):\n\ta=5)\nend";
+	std::string input = "s = 'hello world'";
 	std::cout << "Using:\n" << input << std::endl;
 	Lexer lexr;
 	std::cout << "[!] Starting Lexing\n";
