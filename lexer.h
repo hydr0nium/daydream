@@ -24,6 +24,7 @@ enum TokenType {
 	LESS,
 	GREATER,
 	SEMICOLON,
+	STRING_TOKEN,
 	END
 };
 
@@ -42,11 +43,17 @@ class Token{
 class Tokens {
 	public:
 		std::vector<Token> tokens;
-		Tokens(std::vector<Token> t);
+		Tokens(std::vector<Token>, std::string);
 		Token current();
 		Token next();
 		Token next(int index);
 		void eat();
+		std::string getCodeContext();
+		int getLineNumber();
+		void print();
+	private:
+		int lineNumber;
+		std::string source_code;
 };
 
 class Lexer {
