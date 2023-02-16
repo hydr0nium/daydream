@@ -104,16 +104,19 @@ std::optional<Token> lex_keyword(std::string lexing_string, int& pos) {
 	}
 }
 
-void parse_error(std::string expected, std::string found){
+void parse_error(std::string expected, std::string found, Tokens tokens){
 
-	std::cout << "Parse Error!\nTried to parse Token as " << expected << " but found: " << found << std::endl;
-	std::cout << "Quitting!" << std::endl;
+	std::cout << "Parse error in line " << tokens.getLineNumber() << ":" << std::endl;
+	std::cout << tokens.getCodeContext() << std::endl;
+	std::cout << "Expected: '" << expected << "', but found: '" << found << "'"<< std::endl;
 	exit(1);
 
 }
 
-void parse_error(std::string error_message) {
+void parse_error(std::string error_message, Tokens tokens) {
 
+	std::cout << "Parse error in line " << tokens.getLineNumber() << ":" << std::endl;
+	std::cout << tokens.getCodeContext() << std::endl;
 	std::cout << error_message << std::endl;
 	exit(1);
 
