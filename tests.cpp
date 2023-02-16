@@ -191,11 +191,11 @@ void lex_string() {
     std::string input = "\"hello world\"";
     Lexer lexr;
     Tokens tokens = lexr.lex(input);
-    assert(tokens.current().value=="hello world" && tokens.current().get_type() == STRING_TOKEN);
+    assert(tokens.current().value=="hello world" && tokens.current().get_type() == STRING);
 
     input = "'hello world 2'";
     tokens = lexr.lex(input);
-    assert(tokens.current().value=="hello world 2" && tokens.current().get_type() == STRING_TOKEN);
+    assert(tokens.current().value=="hello world 2" && tokens.current().get_type() == STRING);
 
 
 }
