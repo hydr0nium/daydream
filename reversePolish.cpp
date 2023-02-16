@@ -44,6 +44,10 @@ ReversePolishNotation convertInfixToRPN(Tokens& tokens, Token* optional_token_be
 			parseNum(tokens, rpn_queue);
 			was_operator = false;
 			break;
+		case STRING:
+			parseString(tokens, rpn_queue);
+			was_operator = false;
+			break;
 		case VAR:
 			parseVariableOrFunctionCall(tokens, rpn_queue);
 			was_operator = false;
@@ -129,6 +133,9 @@ Statement* parseRPN(ReversePolishNotation rpn, Tokens tokens){
 			statement_stack.push(stm);
 		}
 		else if (statement_type == "functionCall") {
+			statement_stack.push(stm);
+		}
+		else if (statement_type == "string"){
 			statement_stack.push(stm);
 		}
 		else if (statement_type == "+") {
