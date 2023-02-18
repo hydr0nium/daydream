@@ -322,22 +322,16 @@ std::string Number::toTreeString() {
 	return "Number(" + this->value + ")";
 }
 
-Variable::Variable(std::string name, VariableType varType){
-	this->varType = varType;
-	this->name = name;
-}
-
 Variable::Variable(std::string name) {
-	this->varType = UNKNOWN_TYPE;
 	this->name = name;
-}
-
-std::string Variable::toString(){
-	return this->name;
 }
 
 std::string Variable::toTreeString(){
 	return "Variable(" + this->name + ")";
+}
+
+std::string Variable::toString(){
+	return this->name;
 }
 
 Equality::Equality(){}
@@ -352,7 +346,7 @@ std::string Equality::toString(){
 }
 
 std::string Equality::toTreeString(){
-	return "Equality(" + LHS->toTreeString() + "," + RHS->toTreeString() + ")";
+	return "Equality(" + LHS->toTreeString() + ";" + RHS->toTreeString() + ")";
 }
 
 Power::Power(){};
@@ -367,7 +361,7 @@ std::string Power::toString(){
 }
 
 std::string Power::toTreeString() {
-	return "Power(" + LHS->toTreeString() + "," + RHS->toTreeString() + ")";
+	return "Power(" + LHS->toTreeString() + ";" + RHS->toTreeString() + ")";
 }
 
 Not::Not(){};
@@ -397,7 +391,7 @@ std::string And::toString(){
 }
 
 std::string And::toTreeString() {
-	return "And("+ this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+	return "And("+ this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
 
 Or::Or(){};
@@ -412,7 +406,7 @@ std::string Or::toString(){
 }
 
 std::string Or::toTreeString() {
-	return "Or(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+	return "Or(" + this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
 
 Bool::Bool(std::string truth){
@@ -439,7 +433,7 @@ std::string Plus::toString(){
 }
 
 std::string Plus::toTreeString() {
-	return "Plus(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+	return "Plus(" + this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
 
 FunctionCall::FunctionCall(std::string functionName, Params params){
@@ -467,7 +461,7 @@ std::string Multiplication::toString(){
 }
 
 std::string Multiplication::toTreeString() {
-	return "Multiplication(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+	return "Multiplication(" + this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
 
 Params::Params(std::vector<Statement*> params){
@@ -479,7 +473,7 @@ Params::Params(){};
 std::string Params::toString(){
 	std::string out = "";
 	for (auto stm: this->params){
-		out += stm->toString() + ",";
+		out += stm->toString() + ";";
 	}
 	out.pop_back();
 	return out;
@@ -488,7 +482,7 @@ std::string Params::toString(){
 std::string Params::toTreeString(){
 	std::string param_string = "";
 	for (auto stm: this->params){
-		param_string += stm->toTreeString() + ",";
+		param_string += stm->toTreeString() + ";";
 	}
 	param_string.pop_back();
 	return "Params(" + param_string + ")";
@@ -513,7 +507,7 @@ std::string Minus::toString(){
 }
 
 std::string Minus::toTreeString() {
-	return "Minus(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+	return "Minus(" + this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
 
 Divide::Divide(){}
@@ -528,7 +522,7 @@ std::string Divide::toString(){
 }
 
 std::string Divide::toTreeString() {
-	return "Divide(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+	return "Divide(" + this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
 
 LParen::LParen(){};
@@ -563,7 +557,7 @@ std::string Less::toString(){
 }
 
 std::string Less::toTreeString() {
-	return "Less(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+	return "Less(" + this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
 
 Greater::Greater(){}
@@ -578,7 +572,7 @@ std::string Greater::toString(){
 }
 
 std::string Greater::toTreeString() {
-	return "Greater(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+	return "Greater(" + this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
 
 LessEqual::LessEqual(){}
@@ -593,7 +587,7 @@ std::string LessEqual::toString(){
 }
 
 std::string LessEqual::toTreeString() {
-	return "LessEqual(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+	return "LessEqual(" + this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
 
 GreaterEqual::GreaterEqual(){}
@@ -608,7 +602,7 @@ std::string GreaterEqual::toString(){
 }
 
 std::string GreaterEqual::toTreeString(){
-	return "GreaterEqual(" + this->LHS->toTreeString() + "," + this->RHS->toTreeString() + ")";
+	return "GreaterEqual(" + this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
 
 String::String(std::string value) {
