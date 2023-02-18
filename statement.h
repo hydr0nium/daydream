@@ -8,6 +8,7 @@ class Number: public Statement {
 		Number(std::string);
 		std::string toString();
 		std::string toTreeString();
+        // Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		std::string value;
 };
@@ -19,6 +20,7 @@ class Params: public Statement {
 		Params(std::vector<Statement*>);
 		std::string toString();
 		std::string toTreeString();
+       // Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 };
 
 class FunctionCall: public Statement {
@@ -28,17 +30,17 @@ class FunctionCall: public Statement {
 		FunctionCall(std::string, Params);
 		std::string toTreeString();
 		std::string toString();
+       // Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 };
 
 class Variable: public Statement {
 	public:
-		Variable(std::string, VariableType);
 		Variable(std::string);
 		std::string toTreeString();
 		std::string toString();
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		std::string name;
-		VariableType varType;
 
 };
 
@@ -48,6 +50,7 @@ class Multiplication: public Statement {
 		std::string toString();
 		std::string toTreeString();
 		Multiplication(Statement*, Statement*);
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* RHS;
 		Statement* LHS;
@@ -59,6 +62,7 @@ class Minus: public Statement {
 		std::string toString();
 		std::string toTreeString();
 		Minus(Statement*, Statement*);
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* RHS;
 		Statement* LHS;
@@ -71,6 +75,7 @@ class Plus: public Statement {
 		Plus(Statement*, Statement*);
 		std::string toTreeString();
 		std::string toString();
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* RHS;
 		Statement* LHS;
@@ -83,6 +88,7 @@ class Divide: public Statement {
 		std::string toString();
 		std::string toTreeString();
 		Divide(Statement*, Statement*);
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* LHS;
 		Statement* RHS;
@@ -94,6 +100,7 @@ class Equality: public Statement {
 		std::string toString();
 		std::string toTreeString();
 		Equality(Statement*, Statement*);
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* LHS;
 		Statement* RHS;
@@ -105,6 +112,7 @@ class Power: public Statement {
 		std::string toString();
 		std::string toTreeString();
 		Power(Statement*, Statement*);
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* LHS;
 		Statement* RHS;
@@ -116,6 +124,7 @@ class Not: public Statement {
 		std::string toString();
 		std::string toTreeString();
 		Not(Statement*);
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* RHS;
 };
@@ -126,6 +135,7 @@ class And: public Statement {
 		std::string toString();
 		std::string toTreeString();
 		And(Statement*, Statement*);
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* LHS;
 		Statement* RHS;
@@ -137,6 +147,7 @@ class Or: public Statement {
 		std::string toString();
 		std::string toTreeString();
 		Or(Statement*, Statement*);
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* LHS;
 		Statement* RHS;
@@ -148,6 +159,7 @@ class Bool: public Statement {
 		Bool(std::string);
 		std::string toTreeString();
 		std::string toString();
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 };
 
 class StatementHelper {
@@ -163,6 +175,7 @@ class LParen: public Statement {
 		LParen();
 		std::string toString();
 		std::string toTreeString();
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 };
 
 class RParen: public Statement {
@@ -170,6 +183,7 @@ class RParen: public Statement {
 		RParen();
 		std::string toString();
 		std::string toTreeString();
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 };
 
 class Less: public Statement {
@@ -178,6 +192,7 @@ class Less: public Statement {
 		std::string toString();
 		Less(Statement*, Statement*);
 		std::string toTreeString();
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* LHS;
 		Statement* RHS;
@@ -189,6 +204,7 @@ class Greater: public Statement {
 		std::string toString();
 		Greater(Statement*, Statement*);
 		std::string toTreeString();
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* LHS;
 		Statement* RHS;
@@ -201,6 +217,7 @@ class LessEqual: public Statement {
 		std::string toString();
 		LessEqual(Statement*, Statement*);
 		std::string toTreeString();
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* LHS;
 		Statement* RHS;
@@ -212,6 +229,7 @@ class GreaterEqual: public Statement {
 		std::string toString();
 		GreaterEqual(Statement*, Statement*);
 		std::string toTreeString();
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
 	private:
 		Statement* LHS;
 		Statement* RHS;
@@ -222,6 +240,7 @@ class String: public Statement {
         String(std::string);
         std::string toString();
         std::string toTreeString();
+        //Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
     private:
         std::string value;
 };
