@@ -11,14 +11,16 @@
 // Parses a the Tokens line by line. For each line a expression is returned which can be added to the 
 // Programm object.
 Programm Parser::parse(Tokens tokens) {
+
+	std::vector<Expression*> expressions;
+
 	Token current = tokens.current();
 	while (current.get_type() != END){
 		Expression* exp = parseLine(tokens);
-		std::cout << "Programm as nested Tree:\n";
-		std::cout << exp->toTreeString() << std::endl;
+		expressions.push_back(exp);
 		current = tokens.current();
 	}
-	return Programm();
+	return Programm(expressions);
 }
 
 
@@ -27,7 +29,7 @@ Expression* parseLine(Tokens& tokens) {
 
 	Token current = tokens.current();
 	Expression* exp;
-
+	Token third;
 	// If the first thing in the line is a newline. Eat it and try again
 	while (current.get_type() == NL) {
 		tokens.eat(); // eat the newline
@@ -35,7 +37,14 @@ Expression* parseLine(Tokens& tokens) {
 	}
 	// Get the next two values after the current token
 	Token next = tokens.next();
-	Token third = tokens.next(2);
+
+	// This is also a dirty way of solving the problem of having only a single variable / statement in the programm
+	if (tokens.tokens.size()<=2) {
+		third = Token(END, "EOF");
+	}
+	else {
+		Token third = tokens.next(2);
+	}
  	if (current.get_type()==VAR && next.get_type() == EQUAL && third.get_type() != EQUAL) {
 		exp = parseDeclaration(tokens);
 	}
@@ -48,21 +57,140 @@ Expression* parseLine(Tokens& tokens) {
 	else if (current.get_type() == KEYWORD && current.value == "for") {
 		exp = parseFor(tokens);
 	}
+	else if (current.get_type() == KEYWORD && current.get_value() == "def") {
+		exp = parseFunctionDefinition(tokens);
+	}
+	else if (current.get_type() == KEYWORD && current.get_value() == "return") {
+		exp = parseReturn(tokens);
+	}
+	else if (current.get_type() == KEYWORD && current.get_value() == "break") {
+		exp = parseBreak(tokens);
+	}
 	else {
 		exp = buildStatement(tokens);
 	}
-
 	// Eat the last thing at the end of the line. Either this will be at the end of a statement or at the end of if, while, etc. But it will always be a newline
 	// In case of if, while, etc it will eat the newline not at the end of the line with the if but after the end that ends the if (if not one liner if) otherwise
 	// it will eat the newline after the if.
-	tokens.eat();
+	current = tokens.current();
+	if (!(current.get_type() == NL || current.get_type() == END)) {
+		parse_error("newline or end of file", current.get_value(), tokens);
+	}
+	if (current.get_type() == NL) {
+		tokens.eat(); // eat newline
+	}
 	return exp;
+
+}
+
+Expression* parseReturn(Tokens& tokens) {
+	Token current = tokens.current();
+	
+	// We check if we really got a return expression
+	if (!(current.get_type() == KEYWORD && current.get_value() == "return")){
+		parse_error("return <statement>", current.get_value(), tokens);
+	}
+	tokens.eat(); // eat return keyword
+
+	Statement* return_value = buildStatement(tokens);
+	return new Return(return_value);
+
+}
+
+Expression* parseBreak(Tokens& tokens) {
+	Token current = tokens.current();
+	if (!(current.get_type() == KEYWORD && current.get_value() == "break")){
+		parse_error("break", current.get_value(), tokens);
+	}
+	tokens.eat(); // eat break keyword
+	return new Break();
+}
+
+Expression* parseFunctionDefinition(Tokens& tokens) {
+	Token current = tokens.current();
+	Token next = tokens.next();
+
+	// We check if we get a function definition
+	if (!(current.get_type() == KEYWORD && current.get_value() == "def")){
+		parse_error("def <function name>(<params>): <body>", current.get_value(), tokens);
+	}
+	tokens.eat(); // eat def keyword
+	current = tokens.current();
+	
+	// Check for the function name after def
+	if (current.get_type() != VAR) {
+		parse_error("<function name>", current.get_value(), tokens);
+	}
+	tokens.eat(); // eat function name
+	std::string function_name = current.get_value();
+	current = tokens.current();
+
+	// Check if we get a opening parenthesis
+	if (current.get_type() != LPAREN) {
+		parse_error("(", current.get_value(), tokens);
+	}
+	tokens.eat(); // eat left parenthesis
+
+	std::vector<std::string> param_names = parseFunctionDefinitionParams(tokens);
+	current = tokens.current();
+
+	// Check if we get a closing parenthesis
+	if (current.get_type() != RPAREN) {
+		parse_error(")", current.get_value(), tokens);
+	}
+	tokens.eat(); // eat right parenthesis
+	current = tokens.current();
+
+	// Check if we get a colon
+	if (current.get_type() != COLON) {
+		parse_error(":", current.get_value(), tokens);
+	}
+	tokens.eat(); // eat colon
+	current = tokens.current();
+
+	bool one_line = false;
+	if (current.get_type() != NL) {
+		one_line = true;
+	}
+	else {
+		tokens.eat(); // eat newline
+	}
+
+	// Parse body of function definiton
+	Block* body = parseBody(tokens, one_line);
+	body->setBlockType(FUNC);
+	return new FunctionDefinition(function_name, param_names, body);
+}
+
+
+std::vector<std::string> parseFunctionDefinitionParams(Tokens& tokens) {
+	Token current = tokens.current();
+	Token next = tokens.next();
+	std::vector<std::string> param_names;
+	while (true) {
+		if(current.get_type() != VAR) {
+			parse_error("<variable name>", current.get_value(), tokens);
+		}
+		param_names.push_back(current.get_value()); // push var name to param names
+		tokens.eat();
+		if (next.get_type() != COMMA){
+			break;
+		}
+		tokens.eat();
+		current = tokens.current();
+		next = tokens.next();
+
+	}
+	return param_names;
+
+
 
 }
 
 Expression* parseWhile(Tokens& tokens){
 	Token current = tokens.current();
 	Token next = tokens.next();
+
 
 	// We check if we get a while loop
 	if (!(current.get_type() == KEYWORD && current.value == "while")){
@@ -93,6 +221,7 @@ Expression* parseWhile(Tokens& tokens){
 
 	// Parse body for while loop
 	Block* body = parseBody(tokens, one_line);
+	body->setBlockType(WHILE);
 	return new While(condition, body);
 }
 
@@ -128,6 +257,7 @@ Expression* parseIf(Tokens& tokens){
 
 	// Start parsing the body of the if 
 	Block* body = parseBody(tokens, one_line);
+	body->setBlockType(IF);
 	return new If(condition, body);
 
 }
@@ -136,19 +266,18 @@ Block* parseBody(Tokens& tokens, bool one_line){
 
 	Token current = tokens.current();
 	std::vector<Expression*> expressions;
-
 	// The body of the object will be one line. E.g. if, while, for in oneline
-	if  (one_line){	
+	if  (one_line){
 		// parse the "line" after the if
 		expressions.push_back(parseLine(tokens));
 		return new Block(expressions);
 	}
-
 	// if we get to here the if is not oneline and the newline after the if was eaten. Meaning we are in a line beneath the if
 	// Parse new lines until we reach the end keyword to end the if block
 	while(current.value != "end") {
 
 		expressions.push_back(parseLine(tokens));
+		current = tokens.current();
 
 	}
 	tokens.eat(); // eat end keyword
@@ -159,7 +288,15 @@ Block* parseBody(Tokens& tokens, bool one_line){
 Expression* parseDeclaration(Tokens& tokens){
 	Token current = tokens.current();
 	Token next = tokens.next();
-	Token after_next = tokens.next(2);
+	Token after_next;
+
+	if (tokens.tokens.size()<=2) {
+		after_next = Token(END, "EOF");
+	}
+	else {
+		after_next = tokens.next(2);
+	}
+
 
 	// Check if we get an assignment meaning we need to have a variable name followed by exactly one equals.
 	if (!(current.get_type()==VAR && next.get_type() == EQUAL && after_next.get_type() != EQUAL)) {
@@ -247,8 +384,8 @@ Expression* parseFor(Tokens& tokens){
 		parse_error(":", current.value, tokens);
 	}
 	tokens.eat(); // eat the colon
+	current = tokens.current();
 	
-
 	bool one_line = false;
 	if (current.get_type() != NL){
 		one_line = true;
@@ -258,6 +395,7 @@ Expression* parseFor(Tokens& tokens){
 	}
 
 	Block* body = parseBody(tokens, one_line);
+	body->setBlockType(FOR);
 	return new For(init, condition, changer, body);
 
 
@@ -283,8 +421,8 @@ Statement* buildStatement(Tokens& tokens, Token* optional_beginning_token){
 
 // ------------------------------------------------ Class Definitions ---------------------------------------------
 
-Programm::Programm(){
-
+Programm::Programm(std::vector<Expression*> expressions){
+	this->expressions = expressions;
 }
 
 Parser::Parser() {
@@ -318,6 +456,14 @@ std::string Block::toTreeString() {
 	return ret_string;
 }
 
+void Block::setBlockType(BlockType type) {
+	this->type = type;
+}
+
+BlockType Block::getBlockType() {
+	return this->type;
+}
+
 If::If(Statement* condition, Block* body){
 	this->condition = condition;
 	this->body = body;
@@ -345,4 +491,50 @@ For::For(VariableDeclaration* init, Statement* condition, VariableDeclaration* c
 
 std::string For::toTreeString() {
 	return "For(" + this->init->toTreeString() + ";" + this->condition->toTreeString() + ";" + this->changer->toTreeString() + ";" + this->body->toTreeString() + ")";
+}
+
+std::string Programm::toTreeString() {
+
+	std::string ret = "Programm(";
+	for (auto expression: this->expressions){
+		ret = ret + expression->toTreeString() + ";";
+	}
+	// Remove last semicolon
+	ret.pop_back();
+	ret += ")";
+	return ret;
+
+}
+
+FunctionDefinition::FunctionDefinition(std::string function_name, std::vector<std::string> param_names, Block* body) {
+	this->name = function_name;
+	this->param_names = param_names;
+	this->body = body;
+}
+
+std::string FunctionDefinition::toTreeString() {
+	std::string ret = "FunctionDefinition(" + this->name + ";Params(";
+	for (auto name: param_names) {
+		ret = ret + name + ";";
+	}
+	ret.pop_back();
+	ret += ");";
+	ret += this->body->toTreeString();
+	ret += ")";
+	return ret;
+
+}
+
+Return::Return(Statement* ret_value) {
+	this->return_value = ret_value;
+}
+
+std::string Return::toTreeString() {
+	return "Return(" + this->return_value->toTreeString() + ")";
+}
+
+Break::Break() {};
+
+std::string Break::toTreeString() {
+	return "Break()"; 
 }
