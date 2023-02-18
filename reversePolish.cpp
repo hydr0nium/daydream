@@ -163,7 +163,7 @@ Statement* parseRPN(ReversePolishNotation rpn, Tokens tokens){
 			delete stm;
 		}
 		else if (statement_type == "-") { // Build Minus Object
-			std::cout << statement_stack.top()->toTreeString() << std::endl;
+			
 			if ( !(statement_stack.size()>=2) ){
 				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a subtraction object", tokens);
 			}
