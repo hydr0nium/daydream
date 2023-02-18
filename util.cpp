@@ -15,6 +15,11 @@ void eat_whitespace(Tokens& tokens) {
 
 }
 
+void debug(Tokens tokens) {
+	std::cout << "DEBUG:\n";
+	tokens.print();
+}
+
 std::string enum_to_string(TokenType t) {
 
 	switch (t) {
@@ -77,6 +82,9 @@ std::optional<Token> lex_keyword(std::string lexing_string, int& pos) {
 	"and",
 	"or",
 	"not",
+	"def",
+	"return",
+	"break",
 	"end"
 	};
 	int lexing_string_len = lexing_string.size();
@@ -120,6 +128,12 @@ void parse_error(std::string error_message, Tokens tokens) {
 	std::cout << error_message << std::endl;
 	exit(1);
 
+}
+
+void eval_error(std::string expected, std::string found) {
+	std::cout << "Eval error:" << std::endl;
+	std::cout << "Expected: '" << expected << "', but found: '" << found << "'" << std::endl;
+	exit(1);
 }
 
 void pushOperatorToStack(std::stack<StatementHelper>& operatorStack, StatementHelper& op, std::vector<StatementHelper>& queue){
