@@ -59,6 +59,10 @@ Token Tokens::next(int index) {
 }
 
 void Tokens::eat() {
+	if (this->tokens.empty()) {
+		std::cout << "Can not eat token because there are no tokens left." << std::endl; 
+		exit(1);
+	}
 	Token current = this->current();
 	if (current.get_type() == NL) {
 		this->lineNumber += 1;
@@ -277,7 +281,7 @@ std::string Token::get_value() {
 
 std::string Tokens::getCodeContext() {
 
-	// the line number feature is kinda broken will fix that
+	// the line number feature is kinda broken will fix that later
 	int ln = 1;
 	int context = 2;
 	std::string programm_context = "...\n" + std::to_string(ln) + "     ";
