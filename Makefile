@@ -1,6 +1,6 @@
 CC = g++
 
-FILES = parser.cpp lexer.cpp util.cpp reversePolish.cpp statement.cpp
+FILES = parser.cpp lexer.cpp util.cpp reversePolish.cpp statement.cpp interpreter.cpp
 
 all: main.cpp $(FILES)
 	$(CC) -o bin/run main.cpp $(FILES)
