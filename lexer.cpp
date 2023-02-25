@@ -234,7 +234,7 @@ Tokens Lexer::lex(std::string programm) {
 			tokens.push_back(token);
 		}
 		// Scanning for variable names
-		else if (isalpha(programm[pos])){
+		else if (isalpha(programm[pos]) || programm[pos]=='_'){
 			current_token_value += programm[pos];
 			pos++;
 			while (pos < input_len && (isalnum(programm[pos]) || programm[pos]=='_')){
@@ -281,29 +281,18 @@ std::string Token::get_value() {
 
 std::string Tokens::getCodeContext() {
 
-	// the line number feature is kinda broken will fix that later
 	int ln = 1;
-	int context = 2;
-	std::string programm_context = "...\n" + std::to_string(ln) + "     ";
-	if (ln == this->getLineNumber()){
-				programm_context += "--> ";
-	}
+	std::string ret;
 	for (auto chr: this->source_code){
-		if (ln >= this->getLineNumber()-context && ln<= this->getLineNumber()+context) {
-			programm_context += chr;
+		if (this->getLineNumber() == ln) {
+			ret += chr;
 		}	
 		if (chr == '\n'){
 			ln++;
-			if (ln == this->getLineNumber()){
-				programm_context = programm_context + std::to_string(ln) + " --> ";
-			}
-			else {
-				programm_context = programm_context + std::to_string(ln) + "     ";
-			}
 		}
+		
 	}
-	programm_context += "\n...";
-	return programm_context;
+	return ret;
 
 }
 
