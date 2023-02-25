@@ -489,7 +489,7 @@ ReturnValue Variable::eval(VarScope& local_variable_scope, VarScope& global_vari
         return global_variable_scope.getValueByName(name);
     }
     else {
-        eval_error("Can not found variable with name: " + name, 33);
+        eval_error("Can not find variable with name: " + name, 33);
     }
 
     // This can never happen because eval error quits execution
@@ -694,7 +694,7 @@ ReturnValue evalNonFuncBlock(VarScope& local_variable_scope, VarScope& global_va
 ReturnValue Debug::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
 
 
-    std::cout << "----------------------------------------" << "DEBUG-INFO" << "----------------------------------------\n";
+    std::cout << "------------------" << "DEBUG-INFO" << "------------------\n";
     std::cout << "Local Variables:\n";
     for(auto var: local_variable_scope.getScope()) {
         std::cout << var->getName() + " (" + enum_to_string(var->getType()) + "): " + var->getValue() + "\n";
@@ -703,7 +703,7 @@ ReturnValue Debug::eval(VarScope& local_variable_scope, VarScope& global_variabl
     for(auto var: global_variable_scope.getScope()) {
         std::cout << var->getName() + " (" + enum_to_string(var->getType()) + "): " + var->getValue() + "\n";
     }
-    std::cout << "----------------------------------------" << "DEBUG--END" << "----------------------------------------\n";
+    std::cout << "------------------" << "DEBUG--END" << "------------------\n";
     return ReturnValue(NONE_TYPE, "");
 }
 
