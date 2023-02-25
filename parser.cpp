@@ -66,6 +66,9 @@ Expression* parseLine(Tokens& tokens) {
 	else if (current.get_type() == KEYWORD && current.get_value() == "break") {
 		exp = parseBreak(tokens);
 	}
+	else if (current.get_type() == KEYWORD && current.get_value() == "debug") {
+		exp = parseDebug(tokens);
+	}
 	else {
 		exp = buildStatement(tokens);
 	}
@@ -81,6 +84,11 @@ Expression* parseLine(Tokens& tokens) {
 	}
 	return exp;
 
+}
+
+Expression* parseDebug(Tokens& tokens) {
+	tokens.eat(); // eat debug keyword
+	return new Debug();
 }
 
 Expression* parseReturn(Tokens& tokens) {
@@ -421,6 +429,7 @@ Statement* buildStatement(Tokens& tokens, Token* optional_beginning_token){
 
 // ------------------------------------------------ Class Definitions ---------------------------------------------
 
+
 Programm::Programm(std::vector<Expression*> expressions){
 	this->expressions = expressions;
 }
@@ -537,4 +546,14 @@ Break::Break() {};
 
 std::string Break::toTreeString() {
 	return "Break()"; 
+}
+
+std::vector<Expression*> Block::getExpressions() {
+	return this->expressions;
+}
+
+Debug::Debug() {};
+
+std::string Debug::toTreeString() {
+	return "Debug()";
 }
