@@ -4,19 +4,17 @@
 #include "lexer.h"
 #include <string>
 #include <stack>
+#include "interpreter.h"
 
-// Enums
+// Enum
 
-enum ReturnType {
-	NONE_TYPE,
-	INT_TYPE,
-	FLOAT_TYPE,
-	STRING_TYPE,
-	OBJECT_TYPE,
-	VAR_ASSIGNMENT_TYPE,
-	FUNC_ASSIGNMENT_TYPE,
-	BREAK_TYPE
-};
+
+class FuncInScope;
+class VarInScope;
+class ReturnValue;
+class VarScope;
+class FuncScope;
+
 
 enum BlockType {
 	FUNC,
@@ -24,14 +22,13 @@ enum BlockType {
 	FOR,
 	IF
 };
-
 // Classes
 
 class Expression {
 	public:
 		Expression();
 		virtual std::string toTreeString() = 0;
-		// virtual Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&) = 0;
+		virtual ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&) = 0;
 };
 
 class Programm: public Expression {
@@ -39,7 +36,7 @@ class Programm: public Expression {
 		Programm(std::vector<Expression*>);
 		std::string toTreeString();
 		void run();
-		// Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
 	private:
 		std::vector<Expression*> expressions;
 };
@@ -55,7 +52,7 @@ class Statement: public Expression {
 		Statement();
 		virtual std::string toString() = 0;
 		virtual std::string toTreeString() = 0;
-		// virtual Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&) = 0;
+		virtual ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&) = 0;
 
 };
 
@@ -64,7 +61,7 @@ class VariableDeclaration: public Expression {
 	public:
 		VariableDeclaration(std::string, Statement*);
 		std::string toTreeString();
-		// Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
 	private:
 		std::string var_name;
 		Statement* assigned_stm;
@@ -78,7 +75,8 @@ class Block: public Expression {
 		std::string toTreeString();
 		void setBlockType(BlockType);
 		BlockType getBlockType();
-		// Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
+		std::vector<Expression*> getExpressions();
 	private:
 		BlockType type;
 		std::vector<Expression*> expressions;
@@ -89,7 +87,7 @@ class If: public Expression {
 	public:
 		If(Statement*, Block*);
 		std::string toTreeString();
-		// Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
 	private:
 		Statement* condition;
 		Block* body;
@@ -99,7 +97,7 @@ class While: public Expression {
 	public:
 		While(Statement*, Block*);
 		std::string toTreeString();
-		// Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
 	private:
 		Statement* condition;
 		Block* body;
@@ -109,7 +107,7 @@ class For: public Expression {
 	public:
 		For(VariableDeclaration*, Statement*, VariableDeclaration*, Block*);
 		std::string toTreeString();
-		// Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
 	private:
 		VariableDeclaration* init;
 		Statement* condition;
@@ -121,6 +119,7 @@ class Return: public Expression {
 	public:
 		Return(Statement*);
 		std::string toTreeString();
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
 	private:
 		Statement* return_value;
 };
@@ -128,6 +127,7 @@ class Return: public Expression {
 class Break: public Expression {
 	public:
 		Break();
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
 		std::string toTreeString();
 };
 
@@ -135,13 +135,20 @@ class FunctionDefinition: public Expression {
 	public:
 		FunctionDefinition(std::string, std::vector<std::string>, Block*);
 		std::string toTreeString();
-		// Return eval(VariableScope&, VariableScope&, FunctionScope&, FunctionScope&);
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
 	private:
 		std::string name;
         std::vector<std::string> param_names;
 		Block* body;
 };
 
+class Debug: public Expression {
+	public:
+		Debug();
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
+		std::string toTreeString();
+
+};
 
 // Functions
 Expression* parseDeclaration(Tokens&);
@@ -153,10 +160,10 @@ Expression* parseForChangerDeclaration(Tokens&);
 Expression* parseFunctionDefinition(Tokens&);
 Expression* parseReturn(Tokens&);
 Expression* parseBreak(Tokens&);
+Expression* parseDebug(Tokens&);
 std::vector<std::string> parseFunctionDefinitionParams(Tokens&);
 Statement* buildStatement(Tokens&, Token* = NULL);
 Block* parseBody(Tokens&, bool);
-
 
 
 #endif
