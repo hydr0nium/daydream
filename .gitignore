@@ -5,4 +5,6 @@ parser.exe
 parser
 lexer
 lexer.exe
+daydream
+daydream.exe
 *.dd
