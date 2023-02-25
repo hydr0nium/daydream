@@ -44,6 +44,24 @@ std::string enum_to_string(TokenType t) {
 
 }
 
+std::string enum_to_string(ReturnType t) {
+
+	switch (t) {
+	case NONE_TYPE: return "none";
+	case INT_TYPE: return "int";
+	case FLOAT_TYPE: return "float";
+    case BOOL_TYPE: return "bool";
+	case STRING_TYPE: return "string";
+	case OBJECT_TYPE: return "object"; // need to be implemented
+	case VAR_ASSIGNMENT_TYPE: return "var_assignment";
+	case FUNC_ASSIGNMENT_TYPE: return "func_assignment";
+	case BREAK_TYPE: return "break";
+    case RETURN_TYPE: return "return";	
+	default: eval_error("Type not found: " + t, 2000); exit(1); 
+	}
+
+}
+
 void lex_error(int pos, std::string lexing_string) {
 
 	std::string spaces_hat = "";
@@ -85,6 +103,7 @@ std::optional<Token> lex_keyword(std::string lexing_string, int& pos) {
 	"def",
 	"return",
 	"break",
+	"debug",
 	"end"
 	};
 	int lexing_string_len = lexing_string.size();
@@ -130,10 +149,47 @@ void parse_error(std::string error_message, Tokens tokens) {
 
 }
 
-void eval_error(std::string expected, std::string found) {
-	std::cout << "Eval error:" << std::endl;
+void eval_error(std::string expected, std::string found, int id) {
+	std::cout << "Eval error with id " << id << ":" << std::endl;
 	std::cout << "Expected: '" << expected << "', but found: '" << found << "'" << std::endl;
 	exit(1);
+}
+
+void eval_error(std::string error_msg, int id) {
+	std::cout << "Eval error with id " << id << ":" << std::endl;
+	std::cout << error_msg << std::endl;
+	exit(1);
+}
+
+std::string boolToString(bool b) {
+	return ( b ? "true" : "false");
+}
+
+bool stringToBool(std::string s) {
+	if (s=="true") {
+		return true;
+	}
+	return false;
+}
+
+int ipow(int base, int exp)
+{
+    if (exp < 0 ){
+        eval_error("Can not use negative exponent in ipow", 1337);
+    }
+
+    int result = 1;
+    for (;;)
+    {
+        if (exp & 1)
+            result *= base;
+        exp >>= 1;
+        if (!exp)
+            break;
+        base *= base;
+    }
+
+    return result;
 }
 
 void pushOperatorToStack(std::stack<StatementHelper>& operatorStack, StatementHelper& op, std::vector<StatementHelper>& queue){
@@ -186,13 +242,13 @@ int getOperatorPrecedence(StatementHelper& op){
 		return 3;
 	}
 	else if (op_value == "and"){
-		return 2;
-	}
-	else if (op_value == "or"){
 		return 1;
 	}
-	else if (op_value == "==" || op_value == ">" || op_value == "<" || op_value == ">=" || op_value == "<="){
+	else if (op_value == "or"){
 		return 0;
+	}
+	else if (op_value == "==" || op_value == ">" || op_value == "<" || op_value == ">=" || op_value == "<="){
+		return 2;
 	}
 	else if (op_value == "(") {
 		return -1;
