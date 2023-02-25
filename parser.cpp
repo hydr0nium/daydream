@@ -284,8 +284,12 @@ Block* parseBody(Tokens& tokens, bool one_line){
 	// Parse new lines until we reach the end keyword to end the if block
 	while(current.value != "end") {
 
+		if (current.get_type() == END) {
+			parse_error("end keyword", "EOF", tokens);
+		}
 		expressions.push_back(parseLine(tokens));
 		current = tokens.current();
+		
 
 	}
 	tokens.eat(); // eat end keyword
