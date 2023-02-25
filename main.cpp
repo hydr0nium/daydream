@@ -7,7 +7,7 @@ int main(){
 	// I just noticed that my language looks a lot like Ruby but that was unintentional. I haven't coded or seen basically any code in ruby at all.
 
 	std::cout << "-------------\nStarting Interpreter:\n";
-	std::string input = "while (3-2==1):\n\t3+4\nend";
+	std::string input = "sum = 0\nfor(i = 0;i < 10; i = i+1):\n\tsum = sum + i\nend\ndebug\nsum";
 	std::cout << "Using:\n" << input << std::endl;
 	Lexer lexr;
 	std::cout << "[!] Starting Lexing\n";
@@ -16,8 +16,11 @@ int main(){
 	Parser p;
 	std::cout << "[!] Starting Parsing\n";
 	Programm programm = p.parse(tokens);
+	//std::cout << programm.toTreeString() << std::endl;
 	std::cout << "[!] Finished Parsing\n";
-	std::cout << programm.toTreeString() << std::endl;
+	std::cout << "[!] Running Programm\n\n";
+	programm.run();
+	std::cout << std::endl;
 	return 0;
 
 }
