@@ -7,4 +7,5 @@ lexer
 lexer.exe
 daydream
 daydream.exe
+testing
 *.dd

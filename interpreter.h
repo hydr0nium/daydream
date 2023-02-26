@@ -8,16 +8,22 @@
 class Block;
 
 enum ReturnType {
-	NONE_TYPE,
-	INT_TYPE,
-	FLOAT_TYPE,
-    BOOL_TYPE,
-	STRING_TYPE,
-	OBJECT_TYPE, // need to be implemented
+    NONE_TYPE,
+    PRIMITIVE_TYPE,
+    OBJECT_TYPE,
 	VAR_ASSIGNMENT_TYPE,
 	FUNC_ASSIGNMENT_TYPE,
 	BREAK_TYPE,
     RETURN_TYPE
+};
+
+enum ValueType {
+	INT_TYPE,
+	FLOAT_TYPE,
+    BOOL_TYPE,
+	STRING_TYPE,
+	OBJECT_VALUE_TYPE // need to be implemented
+
 };
 
 class Scope {
@@ -25,6 +31,30 @@ class Scope {
     private:
 
 };
+
+class ValueObject {
+    public:
+    private:
+};
+
+class PrimitiveValue: public ValueObject {
+    public:
+        PrimitiveValue(std::string, ValueType);
+        std::string getValue();
+        ValueType getType();
+    private:
+        std::string value;
+        ValueType type;
+};
+
+class ScopeValue: public ValueObject {
+    public:
+        ScopeValue(Scope*);
+        Scope* getValue();
+    private:
+        Scope* scope;
+};
+
 
 class FuncInScope: public Scope {
 
@@ -43,12 +73,12 @@ class FuncInScope: public Scope {
 
 class VarInScope: public Scope {
     public:
-        VarInScope(std::string, std::string, ReturnType);
+        VarInScope(std::string, std::string, ValueType);
         std::string getName();
         std::string getValue();
-        ReturnType getType();
+        ValueType getType();
     private:
-        ReturnType type;
+        ValueType type;
         std::string name;
         std::string value;
 };
@@ -56,19 +86,16 @@ class VarInScope: public Scope {
 
 class ReturnValue {
     public:
-        ReturnValue(ReturnType, std::string);
+        ReturnValue(ReturnType, ValueObject*);
+        ReturnValue(ReturnType);
         ReturnValue();
-        std::string getValue();
         ReturnType getType();
-        void setOptionalValue(Scope*);
-        Scope* getOptionalValue();
-        void setOptionalType(ReturnType);
-        ReturnType getOptionalType();
+        ValueObject* getValueObj();
+
     private:
         ReturnType returnType;
-        std::string value;
-        Scope* optionalVal;
-        ReturnType optionalType;
+        ValueObject* valueObj;
+
 };
 
 class VarScope {

@@ -6,11 +6,11 @@ all: main.cpp $(FILES)
 	$(CC) -o daydream main.cpp $(FILES)
 
 run: all
-	daydream
+	./daydream
 
 test: tests.cpp $(FILES)
-	$(CC) -o bin/testing tests.cpp $(FILES)
-	testing
+	$(CC) -o testing tests.cpp $(FILES)
+	./testing
 
 		
 

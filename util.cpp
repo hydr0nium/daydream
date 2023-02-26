@@ -48,11 +48,6 @@ std::string enum_to_string(ReturnType t) {
 
 	switch (t) {
 	case NONE_TYPE: return "none";
-	case INT_TYPE: return "int";
-	case FLOAT_TYPE: return "float";
-    case BOOL_TYPE: return "bool";
-	case STRING_TYPE: return "string";
-	case OBJECT_TYPE: return "object"; // need to be implemented
 	case VAR_ASSIGNMENT_TYPE: return "var_assignment";
 	case FUNC_ASSIGNMENT_TYPE: return "func_assignment";
 	case BREAK_TYPE: return "break";
@@ -60,6 +55,17 @@ std::string enum_to_string(ReturnType t) {
 	default: eval_error("Type not found: " + t, 2000); exit(1); 
 	}
 
+}
+
+std::string enum_to_string(ValueType t) {
+	switch (t) {
+	case INT_TYPE: return "int";
+	case FLOAT_TYPE: return "float";
+    case BOOL_TYPE: return "bool";
+	case STRING_TYPE: return "string";
+	case OBJECT_VALUE_TYPE: return "object"; // need to be implemented
+	default: eval_error("Type not found: " + t, 2001); exit(1); 
+	}
 }
 
 void lex_error(int pos, std::string lexing_string) {

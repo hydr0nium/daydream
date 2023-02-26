@@ -20,31 +20,34 @@ ReturnValue Programm::eval(VarScope& local_variable_scope, VarScope& global_vari
         ReturnValue ret_obj;
         ret_obj = expression->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
         if (ret_obj.getType() == VAR_ASSIGNMENT_TYPE) {
-            global_variable_scope.push((VarInScope*) ret_obj.getOptionalValue());
+            ScopeValue* scope = ((ScopeValue*) ret_obj.getValueObj());
+            global_variable_scope.push((VarInScope*) scope->getValue());
         }
         else if (ret_obj.getType() == FUNC_ASSIGNMENT_TYPE) {
-            global_function_scope.push((FuncInScope*) ret_obj.getOptionalValue());
+            ScopeValue* scope = ((ScopeValue*) ret_obj.getValueObj());
+            global_function_scope.push((FuncInScope*) scope->getValue());
         }
         else if (ret_obj.getType() == RETURN_TYPE) {
-            return ReturnValue(NONE_TYPE, ""); // End Programm execution
+            return ReturnValue(NONE_TYPE); // End Programm execution
         }
-        else if (ret_obj.getType() != NONE_TYPE && ret_obj.getType() != RETURN_TYPE) {
-            std::cout << ret_obj.getValue();
+        else if (ret_obj.getType() != NONE_TYPE && ret_obj.getType() == PRIMITIVE_TYPE) {
+            std::cout << ret_obj.getValueObj();
         }
     }
-    return ReturnValue(NONE_TYPE, "");
+    return ReturnValue(NONE_TYPE);
 }
 
 
 ReturnValue Number::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
 
-    return ReturnValue(INT_TYPE, this->value);
+    ValueObject* val = new PrimitiveValue(this->value, INT_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 
 }
 
 ReturnValue String::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
-
-    return ReturnValue(STRING_TYPE, this->value);
+    ValueObject* val = new PrimitiveValue(this->value, STRING_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 
 }
 
@@ -55,21 +58,30 @@ ReturnValue Multiplication::eval(VarScope& local_variable_scope, VarScope& globa
     ReturnValue rhs;
     rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
     std::string ret;
-
-    if (lhs.getType() == INT_TYPE && rhs.getType() == INT_TYPE) {
-        ret = multIntInt(lhs.getValue(), rhs.getValue());
-        return ReturnValue(INT_TYPE, ret);
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182793);
     }
-    if (lhs.getType() == INT_TYPE && rhs.getType() == STRING_TYPE) {
-        ret = multIntString(lhs.getValue(), rhs.getValue());
-        return ReturnValue(STRING_TYPE, ret);
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
+    if (leftType == INT_TYPE && rightType == INT_TYPE) {
+        ret = multIntInt(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, INT_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
     }
-    if (lhs.getType() == STRING_TYPE && rhs.getType() == INT_TYPE) {
-        ret = multStringInt(lhs.getValue(), rhs.getValue());
-        return ReturnValue(STRING_TYPE, ret);
+    if (leftType == INT_TYPE && rightType == STRING_TYPE) {
+        ret = multIntString(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, STRING_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
+    }
+    if (leftType == STRING_TYPE && rightType == INT_TYPE) {
+        ret = multStringInt(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, STRING_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
     }
     else {
-        eval_error("Multiplication does not support: " + lhs.getValue() + "*" + rhs.getValue(), 1);
+        eval_error("Multiplication does not support: " + leftValue->getValue() + "*" + rightValue->getValue(), 1);
     }
     // This can never happen because eval_error exits the programm
     return ReturnValue();
@@ -130,12 +142,21 @@ ReturnValue Minus::eval(VarScope& local_variable_scope, VarScope& global_variabl
     rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
     std::string ret;
 
-    if (lhs.getType() == INT_TYPE && rhs.getType() == INT_TYPE) {
-        ret = minusIntInt(lhs.getValue(), rhs.getValue());
-        return ReturnValue(INT_TYPE, ret);
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182794);
+    }
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
+
+    if (leftType == INT_TYPE && rightType == INT_TYPE) {
+        ret = minusIntInt(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, INT_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
     }
     else {
-        eval_error("Subtraction does not support: " + lhs.getValue() + "*" + rhs.getValue(), 5);
+        eval_error("Subtraction does not support: " + leftValue->getValue() + "*" + rightValue->getValue(), 5);
     }
 
     // This can never happen because eval_error exits the programm
@@ -163,26 +184,38 @@ ReturnValue Plus::eval(VarScope& local_variable_scope, VarScope& global_variable
     rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
     std::string ret;
 
-    if (lhs.getType() == INT_TYPE && rhs.getType() == INT_TYPE) {
-        ret = plusIntInt(lhs.getValue(), rhs.getValue());
-        return ReturnValue(INT_TYPE, ret);
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182795);
     }
-    if (lhs.getType() == INT_TYPE && rhs.getType() == STRING_TYPE) {
-        ret = plusIntString(lhs.getValue(), rhs.getValue());
-        return ReturnValue(STRING_TYPE, ret);
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
+
+    if (leftType == INT_TYPE && rightType == INT_TYPE) {
+        ret = plusIntInt(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, INT_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
     }
-    if (lhs.getType() == STRING_TYPE && rhs.getType() == INT_TYPE) {
-        ret = plusStringInt(lhs.getValue(), rhs.getValue());
-        return ReturnValue(STRING_TYPE, ret);
+    if (leftType == INT_TYPE && rightType == STRING_TYPE) {
+        ret = plusIntString(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, STRING_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
     }
-    if (lhs.getType() == STRING_TYPE && rhs.getType() == STRING_TYPE) {
-        ret = plusStringString(lhs.getValue(), rhs.getValue());
-        return ReturnValue(STRING_TYPE, ret);
+    if (leftType == STRING_TYPE && rightType == INT_TYPE) {
+        ret = plusStringInt(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, STRING_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
+    }
+    if (leftType == STRING_TYPE && rightType == STRING_TYPE) {
+        ret = plusStringString(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, STRING_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
     }
     else {
         std::cout << std::endl;
         std::cout << lhs.getType() << " " << rhs.getType() << std::endl;
-        eval_error("Addition does not support: " + lhs.getValue() + "+" + rhs.getValue(), 7);
+        eval_error("Addition does not support: " + leftValue->getValue() + "+" + rightValue->getValue(), 7);
     }
 
     // This can never happen because eval_error exits the programm
@@ -222,13 +255,21 @@ ReturnValue Divide::eval(VarScope& local_variable_scope, VarScope& global_variab
     ReturnValue rhs;
     rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
     std::string ret;
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182796);
+    }
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
 
-    if (lhs.getType() == INT_TYPE && rhs.getType() == INT_TYPE) {
-        ret = divideIntInt(lhs.getValue(), rhs.getValue());
-        return ReturnValue(INT_TYPE, ret);
+    if (leftType == INT_TYPE && rightType == INT_TYPE) {
+        ret = divideIntInt(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, INT_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
     }
     else {
-        eval_error("Divison does not support: " + lhs.getValue() + "/" + rhs.getValue(), 9);
+        eval_error("Divison does not support: " + leftValue->getValue() + "/" + rightValue->getValue(), 9);
     }
 
     // This can never happen because eval_error exits the programm
@@ -255,16 +296,24 @@ ReturnValue Equality::eval(VarScope& local_variable_scope, VarScope& global_vari
     ReturnValue rhs;
     rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
     std::string ret;
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182797);
+    }
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
 
-    ret = boolToString(lhs.getValue() == rhs.getValue() && lhs.getType() == rhs.getType());
-
-    return ReturnValue(BOOL_TYPE, ret);
+    ret = boolToString(leftValue->getValue() == rightValue->getValue() && leftValue->getValue() == rightValue->getValue());
+    ValueObject* val = new PrimitiveValue(ret, BOOL_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 
 }
 
 ReturnValue Bool::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
 
-    return ReturnValue(BOOL_TYPE, this->truth);
+    ValueObject* val = new PrimitiveValue(this->truth, BOOL_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 
 }
 
@@ -290,25 +339,36 @@ ReturnValue Less::eval(VarScope& local_variable_scope, VarScope& global_variable
     ReturnValue lhs;
     lhs = this->LHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
     ReturnValue rhs;
-    rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);    
-    if (!(lhs.getType() == INT_TYPE)) {
-        eval_error("<non int type>: " + lhs.getValue(), "<int type>", 13);
+    rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);  
+
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182798);
+    }
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
+    
+      
+    if (!(leftValue->getType() == INT_TYPE)) {
+        eval_error("<int type>", "<non int type> (Value:"  + leftValue->getValue() + ")", 13);
     }
 
-    if (!(rhs.getType() == INT_TYPE)) {
-        eval_error("<non int type>: " + rhs.getValue(), "<int type>", 14);
+    if (!(rightValue->getType() == INT_TYPE)) {
+        eval_error("<int type>", "<non int type> (Value:"  + rightValue->getValue() + ")", 14);
     }
 
     int a,b;
     try {
-        a = std::stoi(lhs.getValue());
-        b = std::stoi(rhs.getValue());
+        a = std::stoi(leftValue->getValue());
+        b = std::stoi(rightValue->getValue());
     }
     catch (const std::exception e) {
-        eval_error("Could not convert strings to ints in less evalutation: " + lhs.getValue() + " < " + rhs.getValue(), 15);
+        eval_error("Could not convert strings to ints in less evalutation: " + leftValue->getValue() + " < " + rightValue->getValue(), 15);
     }
 
-    return ReturnValue(BOOL_TYPE, boolToString(a<b));
+    ValueObject* val = new PrimitiveValue(boolToString(a<b), BOOL_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 
 }
 
@@ -317,25 +377,35 @@ ReturnValue Greater::eval(VarScope& local_variable_scope, VarScope& global_varia
     ReturnValue lhs;
     lhs = this->LHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
     ReturnValue rhs;
-    rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);  
-    if (!(lhs.getType() == INT_TYPE)) {
-        eval_error("<non int type>: " + lhs.getValue(), "<int type>", 16);
+    rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope); 
+
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182799);
+    }
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
+
+    if (!(leftValue->getType() == INT_TYPE)) {
+        eval_error("<int type>", "<non int type> (Value:"  + leftValue->getValue() + ")", 16);
     }
 
-    if (!(rhs.getType() == INT_TYPE)) {
-        eval_error("<non int type>: " + rhs.getValue(), "<int type>", 17);
+    if (!(rightValue->getType() == INT_TYPE)) {
+        eval_error("<int type>", "<non int type> (Value:"  + rightValue->getValue() + ")", 17);
     }
 
     int a,b;
     try {
-        a = std::stoi(lhs.getValue());
-        b = std::stoi(rhs.getValue());
+        a = std::stoi(leftValue->getValue());
+        b = std::stoi(rightValue->getValue());
     }
     catch (const std::exception e) {
-        eval_error("Could not convert strings to ints in greater evalutation: " + lhs.getValue() + " > " + rhs.getValue(), 18);
+        eval_error("Could not convert strings to ints in greater evalutation: " + leftValue->getValue() + " > " + rightValue->getValue(), 18);
     }
 
-    return ReturnValue(BOOL_TYPE, boolToString(a>b));
+    ValueObject* val = new PrimitiveValue(boolToString(a>b), BOOL_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 
 }
 
@@ -344,25 +414,35 @@ ReturnValue LessEqual::eval(VarScope& local_variable_scope, VarScope& global_var
     ReturnValue lhs;
     lhs = this->LHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
     ReturnValue rhs;
-    rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);  
-    if (!(lhs.getType() == INT_TYPE)) {
-        eval_error("<non int type>: " + lhs.getValue(), "<int type>", 19);
+    rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope); 
+
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182800);
+    }
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
+
+    if (!(leftValue->getType() == INT_TYPE)) {
+        eval_error("<int type>", "<non int type> (Value:"  + leftValue->getValue() + ")", 19);
     }
 
-    if (!(rhs.getType() == INT_TYPE)) {
-        eval_error("<non int type>: " + rhs.getValue(), "<int type>", 20);
+    if (!(rightValue->getType() == INT_TYPE)) {
+        eval_error("<int type>", "<non int type> (Value:"  + rightValue->getValue() + ")", 20);
     }
 
     int a,b;
     try {
-        a = std::stoi(lhs.getValue());
-        b = std::stoi(rhs.getValue());
+        a = std::stoi(leftValue->getValue());
+        b = std::stoi(rightValue->getValue());
     }
     catch (const std::exception e) {
-        eval_error("Could not convert strings to ints in less equal evalutation: " + lhs.getValue() + " <= " + rhs.getValue(), 21);
+        eval_error("Could not convert strings to ints in less equal evalutation: " + leftValue->getValue() + " <= " + rightValue->getValue(), 21);
     }
 
-    return ReturnValue(BOOL_TYPE, boolToString(a<=b));
+    ValueObject* val = new PrimitiveValue(boolToString(a<=b), BOOL_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 
 }
 
@@ -372,24 +452,34 @@ ReturnValue GreaterEqual::eval(VarScope& local_variable_scope, VarScope& global_
     lhs = this->LHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
     ReturnValue rhs;
     rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);   
-    if (!(lhs.getType() == INT_TYPE)) {
-        eval_error("<non int type>: " + lhs.getValue(), "<int type>", 22);
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182801);
+    }
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
+
+    if (!(leftValue->getType() == INT_TYPE)) {
+        eval_error("<int type>", "<non int type> (Value:"  + leftValue->getValue() + ")", 22);
     }
 
-    if (!(rhs.getType() == INT_TYPE)) {
-        eval_error("<non int type>: " + rhs.getValue(), "<int type>", 23);
+    if (!(rightValue->getType() == INT_TYPE)) {
+        eval_error("<int type>", "<non int type> (Value:"  + rightValue->getValue() + ")", 23);
     }
+    
 
     int a,b;
     try {
-        a = std::stoi(lhs.getValue());
-        b = std::stoi(rhs.getValue());
+        a = std::stoi(leftValue->getValue());
+        b = std::stoi(rightValue->getValue());
     }
     catch (const std::exception e) {
-        eval_error("Could not convert strings to ints in greater equal evalutation: " + lhs.getValue() + " >= " + rhs.getValue(), 24);
+        eval_error("Could not convert strings to ints in greater equal evalutation: " + leftValue->getValue() + " >= " + rightValue->getValue(), 24);
     }
 
-    return ReturnValue(BOOL_TYPE, boolToString(a>=b));
+    ValueObject* val = new PrimitiveValue(boolToString(a>=b), BOOL_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 
 }
 
@@ -398,25 +488,35 @@ ReturnValue Power::eval(VarScope& local_variable_scope, VarScope& global_variabl
     ReturnValue lhs;
     lhs = this->LHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
     ReturnValue rhs;
-    rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);    
-    if (!(lhs.getType() == INT_TYPE)) {
-        eval_error("<non int type>: " + lhs.getValue(), "<int type>", 25);
+    rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);  
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182802);
+    }
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
+
+    if (!(leftValue->getType() == INT_TYPE)) {
+        eval_error("<int type>", "<non int type> (Value:"  + leftValue->getValue() + ")", 25);
     }
 
-    if (!(rhs.getType() == INT_TYPE)) {
-        eval_error("<non int type>: " + rhs.getValue(), "<int type>", 26);
-    }
+    if (!(rightValue->getType() == INT_TYPE)) {
+        eval_error("<int type>", "<non int type> (Value:"  + rightValue->getValue() + ")", 26);
+    }  
+    
 
     int a,b;
     try {
-        a = std::stoi(lhs.getValue());
-        b = std::stoi(rhs.getValue());
+        a = std::stoi(leftValue->getValue());
+        b = std::stoi(rightValue->getValue());
     }
     catch (const std::exception e) {
-        eval_error("Could not convert strings to ints in power evalutation: " + lhs.getValue() + " ** " + rhs.getValue(), 27);
+        eval_error("Could not convert strings to ints in power evalutation: " + leftValue->getValue() + " ** " + rightValue->getValue(), 27);
     }
 
-    return ReturnValue(INT_TYPE, std::to_string(ipow(a,b)));
+    ValueObject* val = new PrimitiveValue(std::to_string(ipow(a,b)), INT_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 
 }
 
@@ -424,15 +524,22 @@ ReturnValue Not::eval(VarScope& local_variable_scope, VarScope& global_variable_
 
     ReturnValue rhs;
     rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);  
-    if (!(rhs.getType() == BOOL_TYPE)) {
-        eval_error("<non bool type>: " + rhs.getValue(), "<bool type>", 28);
+    if (rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182803);
     }
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType rightType = rightValue->getType();
+    if (!(rightValue->getType() == BOOL_TYPE)) {
+        eval_error("<bool type>", "<non bool type> (Value:"  + rightValue->getValue() + ")", 27);
+    }  
 
     
     bool a;
-    a = stringToBool(rhs.getValue());
+    a = stringToBool(rightValue->getValue());
 
-    return ReturnValue(BOOL_TYPE, boolToString(!a));
+
+    ValueObject* val = new PrimitiveValue(boolToString(!a), BOOL_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 }
 
 ReturnValue And::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
@@ -440,21 +547,32 @@ ReturnValue And::eval(VarScope& local_variable_scope, VarScope& global_variable_
     ReturnValue lhs;
     ReturnValue rhs;
     rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-    lhs = this->LHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-    std::string ret;    
-    if (!(rhs.getType() == BOOL_TYPE)) {
-        eval_error("<non bool type>: " + rhs.getValue(), "<bool type>", 29);
+    lhs = this->LHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);   
+
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182804);
     }
-    if (!(rhs.getType() == BOOL_TYPE)) {
-        eval_error("<non bool type>: " + rhs.getValue(), "<bool type>", 30);
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
+
+    if (!(leftValue->getType() == BOOL_TYPE)) {
+        eval_error("<bool type>", "<non bool type> (Value:"  + leftValue->getValue() + ")", 28);
     }
+
+    if (!(rightValue->getType() == BOOL_TYPE)) {
+        eval_error("<bool type>", "<non bool type> (Value:"  + rightValue->getValue() + ")", 29);
+    }  
 
     
     bool a,b;
-    a = stringToBool(lhs.getValue());
-    b = stringToBool(rhs.getValue());
+    a = stringToBool(leftValue->getValue());
+    b = stringToBool(rightValue->getValue());
 
-    return ReturnValue(BOOL_TYPE, boolToString(a && b));
+
+    ValueObject* val = new PrimitiveValue(boolToString(a && b), BOOL_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 }
 
 ReturnValue Or::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
@@ -462,21 +580,32 @@ ReturnValue Or::eval(VarScope& local_variable_scope, VarScope& global_variable_s
     ReturnValue lhs;
     ReturnValue rhs;
     rhs = this->RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-    lhs = this->LHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-    std::string ret;    
-    if (!(rhs.getType() == BOOL_TYPE)) {
-        eval_error("<non bool type>: " + rhs.getValue(), "<bool type>", 31);
+    lhs = this->LHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);   
+
+    if (lhs.getType() != PRIMITIVE_TYPE || rhs.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 182805);
     }
-    if (!(rhs.getType() == BOOL_TYPE)) {
-        eval_error("<non bool type>: " + rhs.getValue(), "<bool type>", 32);
+    PrimitiveValue* leftValue = (PrimitiveValue*) lhs.getValueObj();
+    PrimitiveValue* rightValue = (PrimitiveValue*) rhs.getValueObj();
+    ValueType leftType = leftValue->getType();
+    ValueType rightType = rightValue->getType();
+
+    if (!(leftValue->getType() == BOOL_TYPE)) {
+        eval_error("<bool type>", "<non bool type> (Value:"  + leftValue->getValue() + ")", 30);
     }
+
+    if (!(rightValue->getType() == BOOL_TYPE)) {
+        eval_error("<bool type>", "<non bool type> (Value:"  + rightValue->getValue() + ")", 31);
+    }  
+    
 
     
     bool a,b;
-    a = stringToBool(lhs.getValue());
-    b = stringToBool(rhs.getValue());
+    a = stringToBool(leftValue->getValue());
+    b = stringToBool(rightValue->getValue());
 
-    return ReturnValue(BOOL_TYPE, boolToString(a || b));
+    ValueObject* val = new PrimitiveValue(boolToString(a || b), BOOL_TYPE);
+    return ReturnValue(PRIMITIVE_TYPE, val);
 }
 
 ReturnValue Variable::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
@@ -520,8 +649,11 @@ ReturnValue FunctionCall::eval(VarScope& local_variable_scope, VarScope& global_
         ReturnValue ret;
         ret = parameter->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
         std::string var_name = param_names.at(i);
-        std::string value = ret.getValue();
-        ReturnType type = ret.getType();
+        if (ret.getType() != PRIMITIVE_TYPE) {
+            eval_error("<primitive type>", "<non primitive type>", 9001);
+        }
+        std::string value = ((PrimitiveValue*) ret.getValueObj())->getValue();
+        ValueType type = ((PrimitiveValue*) ret.getValueObj())->getType();
         VarInScope* var = new VarInScope(var_name, value, type);
         new_local_variable_scope.push(var);
         i++;
@@ -537,11 +669,15 @@ ReturnValue VariableDeclaration::eval(VarScope& local_variable_scope, VarScope& 
     std::string name = this->var_name;
     ReturnValue stat;
     stat = this->assigned_stm->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-    std::string value = stat.getValue();
-    ReturnType type = stat.getType();
+    if (stat.getType() != PRIMITIVE_TYPE) {
+            eval_error("<primitive type>", "<non primitive type>", 9002);
+    }
+    PrimitiveValue* val = (PrimitiveValue*) stat.getValueObj();
+    std::string value = val->getValue();
+    ValueType type = val->getType();
     VarInScope* var = new VarInScope(name, value, type);
-    ReturnValue ret = ReturnValue(VAR_ASSIGNMENT_TYPE, "");
-    ret.setOptionalValue(var);
+    ValueObject* scp = new ScopeValue(var);
+    ReturnValue ret = ReturnValue(VAR_ASSIGNMENT_TYPE, scp);
     return ret;
 }
 
@@ -550,39 +686,55 @@ ReturnValue If::eval(VarScope& local_variable_scope, VarScope& global_variable_s
     ReturnValue cond;
     cond = this->condition->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
 
-    if (stringToBool(cond.getValue())) {
+    if (cond.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 9003);
+    }
+    PrimitiveValue* value = (PrimitiveValue*) cond.getValueObj();
+    if (stringToBool(value->getValue())) {
         ReturnValue b;
         b = this->body->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-        if (b.getType() == RETURN_TYPE) {
-            ReturnValue val = ReturnValue(RETURN_TYPE, b.getValue());
-            val.setOptionalType(b.getOptionalType());
-            return val;
+        if (b.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 9004);
         }
-        return ReturnValue(NONE_TYPE, "");
+        PrimitiveValue* b_value = (PrimitiveValue*) b.getValueObj();
+        if (b.getType() == RETURN_TYPE) {
+            ValueObject* val = new PrimitiveValue(b_value->getValue(), b_value->getType());
+            ReturnValue ret = ReturnValue(RETURN_TYPE, val);
+            return ret;
+        }
+        return ReturnValue(NONE_TYPE);
     }
     
-    return ReturnValue(NONE_TYPE, "");
+    return ReturnValue(NONE_TYPE);
 }
 
 ReturnValue While::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
 
     ReturnValue cond;
     cond = this->condition->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-
-    while (stringToBool(cond.getValue())) {
+    if (cond.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 9005);
+    }
+    PrimitiveValue* value = (PrimitiveValue*) cond.getValueObj();
+    while (stringToBool(value->getValue())) {
         ReturnValue b;
         b = this->body->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
+        PrimitiveValue* b_value = (PrimitiveValue*) b.getValueObj();
         if (b.getType() == BREAK_TYPE) {
-            return ReturnValue(NONE_TYPE, "");
+            return ReturnValue(NONE_TYPE);
         }
         else if (b.getType() == RETURN_TYPE) {
-            ReturnValue val = ReturnValue(RETURN_TYPE, b.getValue());
-            val.setOptionalType(b.getOptionalType());
-            return val;
+            ValueObject* val = new PrimitiveValue(b_value->getValue(), b_value->getType());
+            ReturnValue ret = ReturnValue(RETURN_TYPE, val);
+            return ret;
         }
         cond = this->condition->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
+        if (cond.getType() != PRIMITIVE_TYPE) {
+            eval_error("<primitive type>", "<non primitive type>", 9007);
+        }
+        value = (PrimitiveValue*) cond.getValueObj();
     }
-    return ReturnValue(NONE_TYPE, "");
+    return ReturnValue(NONE_TYPE);
 }
 
 ReturnValue For::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
@@ -591,40 +743,59 @@ ReturnValue For::eval(VarScope& local_variable_scope, VarScope& global_variable_
     ReturnValue cond;
     ReturnValue incre;
     in= this->init->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-    local_variable_scope.push((VarInScope*) in.getOptionalValue());
+    if (in.getType() != VAR_ASSIGNMENT_TYPE) {
+        eval_error("Variable Assignment in For Expression", 9008);
+    }
+    local_variable_scope.push((VarInScope*)((ScopeValue*) in.getValueObj())->getValue());
     cond = this->condition->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
 
-    while (stringToBool(cond.getValue())) {
+    if (cond.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 9009);
+    }
+    PrimitiveValue* value = (PrimitiveValue*) cond.getValueObj();
+    while (stringToBool(value->getValue())) {
 
         ReturnValue b;
         b = this->body->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
+        PrimitiveValue* b_value = (PrimitiveValue*) b.getValueObj();
         if (b.getType() == BREAK_TYPE) {
-            return ReturnValue(NONE_TYPE, "");
+            return ReturnValue(NONE_TYPE);
         }
         else if (b.getType() == RETURN_TYPE) {
-            ReturnValue val = ReturnValue(RETURN_TYPE, b.getValue());
-            val.setOptionalType(b.getOptionalType());
-            return val;
+            ValueObject* val = new PrimitiveValue(b_value->getValue(), b_value->getType());
+            ReturnValue ret = ReturnValue(RETURN_TYPE, val);
+            return ret;
         }
         incre = this->changer->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-        local_variable_scope.push((VarInScope*) incre.getOptionalValue());
+        if (in.getType() != VAR_ASSIGNMENT_TYPE) {
+            eval_error("Non Variable Assignment in For Expression", 9010);
+        }
+        local_variable_scope.push((VarInScope*) ((ScopeValue*) incre.getValueObj())->getValue());
         cond = this->condition->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
+        if (cond.getType() != PRIMITIVE_TYPE) {
+            eval_error("<primitive type>", "<non primitive type>", 9011);
+        }
+        value = (PrimitiveValue*) cond.getValueObj();
     }
-    return ReturnValue(NONE_TYPE, "");
+    return ReturnValue(NONE_TYPE);
 }
 
 ReturnValue Return::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
 
     ReturnValue ret;
     ret = this->return_value->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-    ReturnValue val = ReturnValue(RETURN_TYPE, ret.getValue());
-    val.setOptionalType(ret.getType());
-    return val;
+    if (ret.getType() != PRIMITIVE_TYPE) {
+        eval_error("<primitive type>", "<non primitive type>", 9012);
+    }
+    PrimitiveValue* val = (PrimitiveValue*) ret.getValueObj();
+    ValueObject* value = new PrimitiveValue(val->getValue(), val->getType());
+    ret = ReturnValue(RETURN_TYPE, value);
+    return ret;
 }
 
 ReturnValue Break::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
 
-    return ReturnValue(BREAK_TYPE, "");
+    return ReturnValue(BREAK_TYPE);
 }
 
 ReturnValue FunctionDefinition::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
@@ -633,8 +804,8 @@ ReturnValue FunctionDefinition::eval(VarScope& local_variable_scope, VarScope& g
     Block* body = this->body;
     std::vector<std::string> params = this->param_names;
     FuncInScope* func = new FuncInScope(functionName, params, body);
-    ReturnValue ret = ReturnValue(FUNC_ASSIGNMENT_TYPE, "");
-    ret.setOptionalValue(func);
+    ValueObject* val = new ScopeValue(func);
+    ReturnValue ret = ReturnValue(FUNC_ASSIGNMENT_TYPE, val);
     return ret;
 }
 
@@ -651,19 +822,20 @@ ReturnValue evalFuncBlock(VarScope& local_variable_scope, VarScope& global_varia
     for(auto expr: body->getExpressions()) {
         ret_obj = expr->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
         if (ret_obj.getType() == VAR_ASSIGNMENT_TYPE) {
-            local_variable_scope.push((VarInScope*) ret_obj.getOptionalValue());
+            local_variable_scope.push((VarInScope*) ((ScopeValue*)ret_obj.getValueObj())->getValue());
         }
         else if (ret_obj.getType() == FUNC_ASSIGNMENT_TYPE) {
-            local_function_scope.push((FuncInScope*) ret_obj.getOptionalValue());
+            local_function_scope.push((FuncInScope*) ((ScopeValue*)ret_obj.getValueObj())->getValue());
         }
         else if (ret_obj.getType() == RETURN_TYPE) {
-            return ReturnValue(ret_obj.getOptionalType(), ret_obj.getValue());
+            // Change this later such that I know if the object is primitive or an object
+            return ReturnValue(PRIMITIVE_TYPE, ret_obj.getValueObj());
         }
-        else if (ret_obj.getType() != NONE_TYPE) {
-            std::cout << ret_obj.getValue();
+        else if (ret_obj.getType() != NONE_TYPE && ret_obj.getType() == PRIMITIVE_TYPE) {
+            std::cout << ((PrimitiveValue*) ret_obj.getValueObj())->getValue();
         }
     }
-    return ReturnValue(NONE_TYPE, "");
+    return ReturnValue(NONE_TYPE);
 }
 
 ReturnValue evalNonFuncBlock(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope, Block* body) {
@@ -671,24 +843,24 @@ ReturnValue evalNonFuncBlock(VarScope& local_variable_scope, VarScope& global_va
     for(auto expr: body->getExpressions()) {
         ret_obj = expr->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
         if (ret_obj.getType() == VAR_ASSIGNMENT_TYPE) {
-            global_variable_scope.push((VarInScope*) ret_obj.getOptionalValue());
+            global_variable_scope.push((VarInScope*) ((ScopeValue*)ret_obj.getValueObj())->getValue());
         }
         else if (ret_obj.getType() == FUNC_ASSIGNMENT_TYPE) {
-            global_function_scope.push((FuncInScope*) ret_obj.getOptionalValue());
+            global_function_scope.push((FuncInScope*) ((ScopeValue*)ret_obj.getValueObj())->getValue());
         }
         else if (ret_obj.getType() == BREAK_TYPE) {
-            return ReturnValue(BREAK_TYPE, "");
+            return ReturnValue(BREAK_TYPE);
         }
         else if (ret_obj.getType() == RETURN_TYPE) {
-            ReturnValue val = ReturnValue(RETURN_TYPE, ret_obj.getValue());
-            val.setOptionalType(ret_obj.getOptionalType());
-            return val;
+
+            return ReturnValue(RETURN_TYPE, ret_obj.getValueObj());
+
         }
-        else if (ret_obj.getType() != NONE_TYPE && ret_obj.getType() != RETURN_TYPE) {
-            std::cout << ret_obj.getValue();
+        else if (ret_obj.getType() != NONE_TYPE && ret_obj.getType() == PRIMITIVE_TYPE) {
+            std::cout << ((PrimitiveValue*) ret_obj.getValueObj())->getValue();
         }
     }
-    return ReturnValue(NONE_TYPE, "");
+    return ReturnValue(NONE_TYPE);
 }
 
 ReturnValue Debug::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
@@ -704,36 +876,45 @@ ReturnValue Debug::eval(VarScope& local_variable_scope, VarScope& global_variabl
         std::cout << var->getName() + " (" + enum_to_string(var->getType()) + "): " + var->getValue() + "\n";
     }
     std::cout << "------------------" << "DEBUG--END" << "------------------\n";
-    return ReturnValue(NONE_TYPE, "");
+    return ReturnValue(NONE_TYPE);
 }
 
 
 // Classes
 
 
-ReturnValue::ReturnValue(ReturnType type, std::string value) {
-    this->value = value;
+ReturnValue::ReturnValue(ReturnType type, ValueObject* value) {
+    this->valueObj = value;
     this->returnType = type;
 }
 
-void ReturnValue::setOptionalValue(Scope* optional) {
-    this->optionalVal = optional;
+ReturnValue::ReturnValue(ReturnType type) {
+    this->valueObj = NULL;
+    this->returnType = type;
 }
 
-Scope* ReturnValue::getOptionalValue() {
-    return this->optionalVal;
-}
-
-
-std::string ReturnValue::getValue() {
-    return this->value;
+ValueObject* ReturnValue::getValueObj() {
+    return this->valueObj;
 }
 
 ReturnType ReturnValue::getType() {
     return this->returnType;
 }
 
-VarInScope::VarInScope(std::string name, std::string value, ReturnType type) {
+PrimitiveValue::PrimitiveValue(std::string value, ValueType type) {
+    this->value = value;
+    this->type = type;
+}
+
+ValueType PrimitiveValue::getType() {
+    return this->type;
+}
+
+std::string PrimitiveValue::getValue() {
+    return this->value;
+}
+
+VarInScope::VarInScope(std::string name, std::string value, ValueType type) {
     this->name = name;
     this->value = value;
     this->type = type;
@@ -761,7 +942,7 @@ std::string VarInScope::getValue() {
     return this->value;
 }
 
-ReturnType VarInScope::getType() {
+ValueType VarInScope::getType() {
     return this->type;
 }
 
@@ -777,7 +958,8 @@ bool VarScope::isInScope(std::string name) {
 ReturnValue VarScope::getValueByName(std::string name) {
     for (auto variable: this->scope) {
         if (variable->getName() == name) {
-            return ReturnValue(variable->getType(), variable->getValue());
+            ValueObject* val = new PrimitiveValue(variable->getValue(), variable->getType());
+            return ReturnValue(PRIMITIVE_TYPE, val);
         }
     }
     eval_error("Can not find variable with name: " + name, 35);
@@ -850,14 +1032,6 @@ void FuncScope::push(FuncInScope* function) {
     }
 }
 
-void ReturnValue::setOptionalType(ReturnType type) {
-    this->optionalType = type;
-}
-
-ReturnType ReturnValue::getOptionalType() {
-    return this->optionalType;
-}
-
 FuncScope::FuncScope() {};
 VarScope::VarScope() {};
 ReturnValue::ReturnValue() {};
@@ -867,5 +1041,13 @@ std::vector<VarInScope*> VarScope::getScope() {
 }
 
 std::vector<FuncInScope*> FuncScope::getScope() {
+    return this->scope;
+}
+
+ScopeValue::ScopeValue(Scope* scope) {
+    this->scope = scope;
+}
+
+Scope* ScopeValue::getValue() {
     return this->scope;
 }
