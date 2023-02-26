@@ -31,7 +31,7 @@ ReturnValue Programm::eval(VarScope& local_variable_scope, VarScope& global_vari
             return ReturnValue(NONE_TYPE); // End Programm execution
         }
         else if (ret_obj.getType() != NONE_TYPE && ret_obj.getType() == PRIMITIVE_TYPE) {
-            std::cout << ret_obj.getValueObj();
+            std::cout << ((PrimitiveValue*) ret_obj.getValueObj())->getValue();
         }
     }
     return ReturnValue(NONE_TYPE);
@@ -693,11 +693,11 @@ ReturnValue If::eval(VarScope& local_variable_scope, VarScope& global_variable_s
     if (stringToBool(value->getValue())) {
         ReturnValue b;
         b = this->body->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-        if (b.getType() != PRIMITIVE_TYPE) {
-        eval_error("<primitive type>", "<non primitive type>", 9004);
+        if (b.getType() == BREAK_TYPE) {
+            return ReturnValue(BREAK_TYPE);
         }
-        PrimitiveValue* b_value = (PrimitiveValue*) b.getValueObj();
         if (b.getType() == RETURN_TYPE) {
+            PrimitiveValue* b_value = (PrimitiveValue*) b.getValueObj();
             ValueObject* val = new PrimitiveValue(b_value->getValue(), b_value->getType());
             ReturnValue ret = ReturnValue(RETURN_TYPE, val);
             return ret;
@@ -719,11 +719,11 @@ ReturnValue While::eval(VarScope& local_variable_scope, VarScope& global_variabl
     while (stringToBool(value->getValue())) {
         ReturnValue b;
         b = this->body->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-        PrimitiveValue* b_value = (PrimitiveValue*) b.getValueObj();
         if (b.getType() == BREAK_TYPE) {
             return ReturnValue(NONE_TYPE);
         }
         else if (b.getType() == RETURN_TYPE) {
+            PrimitiveValue* b_value = (PrimitiveValue*) b.getValueObj();
             ValueObject* val = new PrimitiveValue(b_value->getValue(), b_value->getType());
             ReturnValue ret = ReturnValue(RETURN_TYPE, val);
             return ret;
@@ -757,11 +757,11 @@ ReturnValue For::eval(VarScope& local_variable_scope, VarScope& global_variable_
 
         ReturnValue b;
         b = this->body->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
-        PrimitiveValue* b_value = (PrimitiveValue*) b.getValueObj();
         if (b.getType() == BREAK_TYPE) {
             return ReturnValue(NONE_TYPE);
         }
         else if (b.getType() == RETURN_TYPE) {
+            PrimitiveValue* b_value = (PrimitiveValue*) b.getValueObj();
             ValueObject* val = new PrimitiveValue(b_value->getValue(), b_value->getType());
             ReturnValue ret = ReturnValue(RETURN_TYPE, val);
             return ret;
@@ -794,7 +794,6 @@ ReturnValue Return::eval(VarScope& local_variable_scope, VarScope& global_variab
 }
 
 ReturnValue Break::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
-
     return ReturnValue(BREAK_TYPE);
 }
 
