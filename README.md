@@ -48,7 +48,7 @@ if 5==5:
   'hello'
 end
 ```
-This will print `5`
+This will print `hello`
 
 As you can see if expressions need to be ended with the `end`keyword. This was a deliberate choice such that daydream is free to use any indentation.
 
