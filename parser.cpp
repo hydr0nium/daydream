@@ -8,24 +8,33 @@
 #include "reversePolish.h"
 #include "statement.h"
 
-// Parses a the Tokens line by line. For each line a expression is returned which can be added to the 
-// Programm object.
-Programm Parser::parse(Tokens tokens) {
+/*
+* Will parse the token stream into a runnable programm
+* @param tokens the tokens object tree that will be turned into a programm
+* @return the programm object that will be runnable
+*/
+Program Parser::parse(Tokens tokens) {
 
 	std::vector<Expression*> expressions;
 
 	Token current = tokens.current();
 	while (current.get_type() != END){
-		Expression* exp = parseLine(tokens);
+		Expression* exp = parseNextExpression(tokens);
 		expressions.push_back(exp);
 		current = tokens.current();
 	}
-	return Programm(expressions);
+	return Program(expressions);
 }
 
-
-// Parses a single line of code and removed newline if its the first thing that will be encountered.
-Expression* parseLine(Tokens& tokens) {
+/*
+ * Will parse a single expression in the token stream. This will consume the expression
+ * in the token stream. Note that this will consume any newlines at the end of a expression
+ * but not 'end of file' tokens. 'end of file' needs to be handle by the callee.
+ * @param tokens a reference to the token stream object
+ * @param remove_newline a optional value set to false if the newline at the end should not be removed (used for one line expressions) (default true)
+ * @return expression object e.g If(), FunctionCall(), etc.
+*/
+Expression* parseNextExpression(Tokens& tokens, bool remove_newline) {
 
 	Token current = tokens.current();
 	Expression* exp;
@@ -79,18 +88,31 @@ Expression* parseLine(Tokens& tokens) {
 	if (!(current.get_type() == NL || current.get_type() == END)) {
 		parse_error("newline or end of file", current.get_value(), tokens);
 	}
-	if (current.get_type() == NL) {
+	if (current.get_type() == NL && remove_newline) {
 		tokens.eat(); // eat newline
 	}
 	return exp;
 
-}
+}	
 
+
+/*
+ * Will parse the debug token if encountered.
+ * CAUTION: Should only be called if you are sure the current token
+ * is a debug token.
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return a debug expression
+*/
 Expression* parseDebug(Tokens& tokens) {
 	tokens.eat(); // eat debug keyword
 	return new Debug();
 }
 
+/*
+ * Will parse the return token if encountered. 
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return a return expression containing the return value
+*/
 Expression* parseReturn(Tokens& tokens) {
 	Token current = tokens.current();
 	
@@ -105,6 +127,11 @@ Expression* parseReturn(Tokens& tokens) {
 
 }
 
+/*
+ * Will parse the break token if encountered. 
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return a break expression
+*/
 Expression* parseBreak(Tokens& tokens) {
 	Token current = tokens.current();
 	if (!(current.get_type() == KEYWORD && current.get_value() == "break")){
@@ -114,6 +141,13 @@ Expression* parseBreak(Tokens& tokens) {
 	return new Break();
 }
 
+
+/*
+ * Will parse a function definition expression. This will consume 
+ * the def token, the function name, function header and function body.
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return a function definition expression
+*/
 Expression* parseFunctionDefinition(Tokens& tokens) {
 	Token current = tokens.current();
 	Token next = tokens.next();
@@ -170,7 +204,12 @@ Expression* parseFunctionDefinition(Tokens& tokens) {
 	return new FunctionDefinition(function_name, param_names, body);
 }
 
-
+/*
+ * Will parse the function header (params of function)
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return a vector of strings containing the name of the parameters
+ * @see parseFunctionDefinition method
+*/
 std::vector<std::string> parseFunctionDefinitionParams(Tokens& tokens) {
 	Token current = tokens.current();
 	Token next = tokens.next();
@@ -195,6 +234,13 @@ std::vector<std::string> parseFunctionDefinitionParams(Tokens& tokens) {
 
 }
 
+
+/*
+ * Will parse a while expression. This will consume the while keyword,
+ * the while header and the while body.
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return a while expression
+*/
 Expression* parseWhile(Tokens& tokens){
 	Token current = tokens.current();
 	Token next = tokens.next();
@@ -233,6 +279,13 @@ Expression* parseWhile(Tokens& tokens){
 	return new While(condition, body);
 }
 
+
+/*
+ * Will parse an if expression. This will consume the if keyword,
+ * the if header and the if body.
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return an if expression
+*/
 Expression* parseIf(Tokens& tokens){
 	Token current = tokens.current();
 	Token next = tokens.next();
@@ -270,24 +323,32 @@ Expression* parseIf(Tokens& tokens){
 
 }
 
+
+/*
+ * Will parse an body of expressions.
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return block expression
+ * @see parseIf, parseWhile, parseFor ...
+*/
 Block* parseBody(Tokens& tokens, bool one_line){
 
 	Token current = tokens.current();
 	std::vector<Expression*> expressions;
+	// TODO: do this in seperate function
 	// The body of the object will be one line. E.g. if, while, for in oneline
 	if  (one_line){
 		// parse the "line" after the if
-		expressions.push_back(parseLine(tokens));
+		expressions.push_back(parseNextExpression(tokens, false));
 		return new Block(expressions);
 	}
-	// if we get to here the if is not oneline and the newline after the if was eaten. Meaning we are in a line beneath the if
+	// If we get to here the body is not oneline and the newline after the if was eaten. Meaning we are in a line beneath the if
 	// Parse new lines until we reach the end keyword to end the if block
 	while(current.value != "end") {
 
 		if (current.get_type() == END) {
 			parse_error("end keyword", "EOF", tokens);
 		}
-		expressions.push_back(parseLine(tokens));
+		expressions.push_back(parseNextExpression(tokens));
 		current = tokens.current();
 		
 
@@ -297,6 +358,12 @@ Block* parseBody(Tokens& tokens, bool one_line){
 	
 }
 
+
+/*
+ * Will parse an variable declarations.
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return variable declaration expression
+*/
 Expression* parseDeclaration(Tokens& tokens){
 	Token current = tokens.current();
 	Token next = tokens.next();
@@ -327,8 +394,13 @@ Expression* parseDeclaration(Tokens& tokens){
 	return var_decl;
 }
 
-
-// This is a changed version of the VariableDeclaration for the for loop because it needs for now a hacky way to work properly
+/*
+ * Will parse an variable declarations.
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return variable declaration expression
+ * NOTE: This function is similar to the parseDeclaration function but with a little difference.
+ * @see parseDeclaration
+*/
 Expression* parseForChangerDeclaration(Tokens& tokens){
 	Token current = tokens.current();
 	Token next = tokens.next();
@@ -353,6 +425,13 @@ Expression* parseForChangerDeclaration(Tokens& tokens){
 	return var_decl;
 }
 
+
+/*
+ * Will parse a for expression. This will consume the for keyword,
+ * the for header and the for body.
+ * @param tokens the tokens object (stream) that should be parsed
+ * @return a for expression
+*/
 Expression* parseFor(Tokens& tokens){
 	Token current = tokens.current();
 	Token next = tokens.next();
@@ -413,6 +492,12 @@ Expression* parseFor(Tokens& tokens){
 
 }
 
+/*
+ * Overwrite for the stream operator for the stack<Statement*> type.
+ * @param os needed for the overwrite of this function
+ * @param stm needed for the overwrite of this function
+ * @returna osstream reference
+*/
 std::ostream& operator<<(std::ostream& os, const std::stack<Statement*> stm) {
 		
 		std::stack<Statement*> stm_copy = stm;
@@ -423,6 +508,16 @@ std::ostream& operator<<(std::ostream& os, const std::stack<Statement*> stm) {
 		return os;
 }
 
+
+/*
+ * Build a statement from a list of tokens. Statements are things that are
+ * combinations of logical and arithmetic terms. Also function calls are
+ * allowed. Examples: a+b, a*b, 4-x+2, functionCall(3), ...
+ * @param tokens the tokens object (stream) that should be parsed
+ * @param optional_beginning_token Only used once for the for loop because otherwise this will not work
+ * its a bad solution but works for now
+ * @return a statement
+*/
 Statement* buildStatement(Tokens& tokens, Token* optional_beginning_token){
 	
 	ReversePolishNotation rpn = convertInfixToRPN(tokens, optional_beginning_token);
@@ -434,7 +529,7 @@ Statement* buildStatement(Tokens& tokens, Token* optional_beginning_token){
 // ------------------------------------------------ Class Definitions ---------------------------------------------
 
 
-Programm::Programm(std::vector<Expression*> expressions){
+Program::Program(std::vector<Expression*> expressions){
 	this->expressions = expressions;
 }
 
@@ -506,9 +601,9 @@ std::string For::toTreeString() {
 	return "For(" + this->init->toTreeString() + ";" + this->condition->toTreeString() + ";" + this->changer->toTreeString() + ";" + this->body->toTreeString() + ")";
 }
 
-std::string Programm::toTreeString() {
+std::string Program::toTreeString() {
 
-	std::string ret = "Programm(";
+	std::string ret = "Program(";
 	for (auto expression: this->expressions){
 		ret = ret + expression->toTreeString() + ";";
 	}
