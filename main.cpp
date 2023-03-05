@@ -34,11 +34,11 @@ int main(int argc, char* argv[]){
 	//std::cout << "[!] Finished Lexing\n";
 	Parser p;
 	//std::cout << "[!] Starting Parsing\n";
-	Programm programm = p.parse(tokens);
+	Program program = p.parse(tokens);
 	//std::cout << programm.toTreeString() << std::endl;
 	//std::cout << "[!] Finished Parsing\n";
-	//std::cout << "[!] Running Programm\n\n";
-	programm.run();
+	//std::cout << "[!] Running Program\n\n";
+	program.run();
 	std::cout << std::endl;
 	return 0;
 
