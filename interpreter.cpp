@@ -6,7 +6,7 @@
 #include "util.h"
 #include <math.h>
 
-void Programm::run() {
+void Program::run() {
     VarScope global_var_scope;
     VarScope local_var_scope;
     FuncScope global_func_scope;
@@ -14,7 +14,7 @@ void Programm::run() {
     this->eval(local_var_scope, global_var_scope, local_func_scope, global_func_scope);
 }
 
-ReturnValue Programm::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
+ReturnValue Program::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
 
     for (auto expression: this->expressions){
         ReturnValue ret_obj;
@@ -28,7 +28,7 @@ ReturnValue Programm::eval(VarScope& local_variable_scope, VarScope& global_vari
             global_function_scope.push((FuncInScope*) scope->getValue());
         }
         else if (ret_obj.getType() == RETURN_TYPE) {
-            return ReturnValue(NONE_TYPE); // End Programm execution
+            return ReturnValue(NONE_TYPE); // End Program execution
         }
         else if (ret_obj.getType() != NONE_TYPE && ret_obj.getType() == PRIMITIVE_TYPE) {
             std::cout << ((PrimitiveValue*) ret_obj.getValueObj())->getValue();
