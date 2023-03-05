@@ -228,20 +228,20 @@ void lex_string() {
 
 }
 
-Programm parse_setup(std::string input) {
+Program parse_setup(std::string input) {
     Lexer lexr;
     Tokens tokens = lexr.lex(input);
     Parser parsr;
-    Programm programm = parsr.parse(tokens);
+    Program programm = parsr.parse(tokens);
     return programm;
 }
 
 void parse_while() {
 
-    Programm programm = parse_setup("while (true): my_var");
-    assert(programm.toTreeString() == "Programm(While(Bool(true);Block(Variable(my_var))))");
+    Program programm = parse_setup("while (true): my_var");
+    assert(programm.toTreeString() == "Program(While(Bool(true);Block(Variable(my_var))))");
     programm = parse_setup("while (3-2==1):\n\t3+4\nend");
-    assert(programm.toTreeString() == "Programm(While(Equality(Minus(Number(3);Number(2));Number(1));Block(Plus(Number(3);Number(4)))))");
+    assert(programm.toTreeString() == "Program(While(Equality(Minus(Number(3);Number(2));Number(1));Block(Plus(Number(3);Number(4)))))");
 
 
 }
@@ -249,49 +249,49 @@ void parse_while() {
 
 void parse_for() {
 
-    Programm programm = parse_setup("for (i=0;i<10;i = i+1): a=5");
-    assert(programm.toTreeString() == "Programm(For(VariableDeclaration(i;Number(0));Less(Variable(i);Number(10));VariableDeclaration(i;Plus(Variable(i);Number(1)));Block(VariableDeclaration(a;Number(5)))))");
+    Program programm = parse_setup("for (i=0;i<10;i = i+1): a=5");
+    assert(programm.toTreeString() == "Program(For(VariableDeclaration(i;Number(0));Less(Variable(i);Number(10));VariableDeclaration(i;Plus(Variable(i);Number(1)));Block(VariableDeclaration(a;Number(5)))))");
 
     programm = parse_setup("for (i=0;i<10;i = i+1):\n\ta=5\nend");
-    assert(programm.toTreeString() == "Programm(For(VariableDeclaration(i;Number(0));Less(Variable(i);Number(10));VariableDeclaration(i;Plus(Variable(i);Number(1)));Block(VariableDeclaration(a;Number(5)))))");
+    assert(programm.toTreeString() == "Program(For(VariableDeclaration(i;Number(0));Less(Variable(i);Number(10));VariableDeclaration(i;Plus(Variable(i);Number(1)));Block(VariableDeclaration(a;Number(5)))))");
 
 }
 
 
 void parse_statements() {
 
-    Programm programm = parse_setup("'hello world'");
-    assert(programm.toTreeString() == "Programm(String(hello world))");
+    Program programm = parse_setup("'hello world'");
+    assert(programm.toTreeString() == "Program(String(hello world))");
 
     programm = parse_setup("a**b");
-    assert(programm.toTreeString() == "Programm(Power(Variable(a);Variable(b)))");
+    assert(programm.toTreeString() == "Program(Power(Variable(a);Variable(b)))");
 
     programm = parse_setup("3==5");
-    assert(programm.toTreeString() == "Programm(Equality(Number(3);Number(5)))");
+    assert(programm.toTreeString() == "Program(Equality(Number(3);Number(5)))");
 
     programm = parse_setup("a and b");
-    assert(programm.toTreeString() == "Programm(And(Variable(a);Variable(b)))");
+    assert(programm.toTreeString() == "Program(And(Variable(a);Variable(b)))");
 
     programm = parse_setup("5 or true");
-    assert(programm.toTreeString() == "Programm(Or(Number(5);Bool(true)))");
+    assert(programm.toTreeString() == "Program(Or(Number(5);Bool(true)))");
 
     programm = parse_setup("not true");
-    assert(programm.toTreeString() == "Programm(Not(Bool(true)))");
+    assert(programm.toTreeString() == "Program(Not(Bool(true)))");
 
     programm = parse_setup("func(a,b)");
-    assert(programm.toTreeString() == "Programm(FunctionCall(func;Params(Variable(a);Variable(b))))");
+    assert(programm.toTreeString() == "Program(FunctionCall(func;Params(Variable(a);Variable(b))))");
 
     programm = parse_setup("a/5");
-    assert(programm.toTreeString() == "Programm(Divide(Variable(a);Number(5)))");
+    assert(programm.toTreeString() == "Program(Divide(Variable(a);Number(5)))");
 
     programm = parse_setup("a<5");
-    assert(programm.toTreeString() == "Programm(Less(Variable(a);Number(5)))");
+    assert(programm.toTreeString() == "Program(Less(Variable(a);Number(5)))");
 
     programm = parse_setup("a>5");
-    assert(programm.toTreeString() == "Programm(Greater(Variable(a);Number(5)))");
+    assert(programm.toTreeString() == "Program(Greater(Variable(a);Number(5)))");
 
     programm = parse_setup("break");
-    assert(programm.toTreeString() == "Programm(Break())");
+    assert(programm.toTreeString() == "Program(Break())");
 
 
 }
@@ -299,31 +299,31 @@ void parse_statements() {
 
 void parse_func_def() {
 
-    Programm programm = parse_setup("def add(a,b): return a+b");
-    assert(programm.toTreeString() == "Programm(FunctionDefinition(add;Params(a;b);Block(Return(Plus(Variable(a);Variable(b))))))");
+    Program programm = parse_setup("def add(a,b): return a+b");
+    assert(programm.toTreeString() == "Program(FunctionDefinition(add;Params(a;b);Block(Return(Plus(Variable(a);Variable(b))))))");
 
     programm = parse_setup("def mult(a,b):\n\treturn a*b\nend");
-    assert(programm.toTreeString() == "Programm(FunctionDefinition(mult;Params(a;b);Block(Return(Multiplication(Variable(a);Variable(b))))))");
+    assert(programm.toTreeString() == "Program(FunctionDefinition(mult;Params(a;b);Block(Return(Multiplication(Variable(a);Variable(b))))))");
 
 }
 
 
 void parse_if() {
 
-    Programm programm = parse_setup("if a==b: i=3");
-    assert(programm.toTreeString() == "Programm(If(Equality(Variable(a);Variable(b));Block(VariableDeclaration(i;Number(3)))))");
+    Program programm = parse_setup("if a==b: i=3");
+    assert(programm.toTreeString() == "Program(If(Equality(Variable(a);Variable(b));Block(VariableDeclaration(i;Number(3)))))");
 
     programm = parse_setup("if my_var>=4:\n\tthis=that\nend");
-    assert(programm.toTreeString() == "Programm(If(GreaterEqual(Variable(my_var);Number(4));Block(VariableDeclaration(this;Variable(that)))))");
+    assert(programm.toTreeString() == "Program(If(GreaterEqual(Variable(my_var);Number(4));Block(VariableDeclaration(this;Variable(that)))))");
 
 
 }
 
 void parse_assignment() {
-    Programm programm = parse_setup("var = 50");
-    assert(programm.toTreeString()=="Programm(VariableDeclaration(var;Number(50)))");
+    Program programm = parse_setup("var = 50");
+    assert(programm.toTreeString()=="Program(VariableDeclaration(var;Number(50)))");
 
     programm = parse_setup("var50 = 3+4");
-    assert(programm.toTreeString() == "Programm(VariableDeclaration(var50;Plus(Number(3);Number(4))))");
+    assert(programm.toTreeString() == "Program(VariableDeclaration(var50;Plus(Number(3);Number(4))))");
 
 }

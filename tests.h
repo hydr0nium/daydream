@@ -24,7 +24,7 @@ void lex_newline();
 void lex_string();
 
 // Parse tests 
-Programm parse_setup(std::string);
+Program parse_setup(std::string);
 void parse_if();
 void parse_for();
 void parse_while();

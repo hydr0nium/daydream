@@ -31,9 +31,9 @@ class Expression {
 		virtual ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&) = 0;
 };
 
-class Programm: public Expression {
+class Program: public Expression {
 	public:
-		Programm(std::vector<Expression*>);
+		Program(std::vector<Expression*>);
 		std::string toTreeString();
 		void run();
 		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
@@ -43,7 +43,7 @@ class Programm: public Expression {
 
 class Parser {
 	public:
-		Programm parse(Tokens);
+		Program parse(Tokens);
 		Parser();
 };
 
@@ -153,7 +153,7 @@ class Debug: public Expression {
 // Functions
 Expression* parseDeclaration(Tokens&);
 Expression* parseIf(Tokens&);
-Expression* parseLine(Tokens&);
+Expression* parseNextExpression(Tokens&, bool = true);
 Expression* parseWhile(Tokens&);
 Expression* parseFor(Tokens&);
 Expression* parseForChangerDeclaration(Tokens&);
