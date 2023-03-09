@@ -22,6 +22,7 @@ class Params{
 		Params(std::vector<Statement*>);
 		std::string toString();
 		std::string toTreeString();
+		void addParamAtFront(Statement*);
 };
 
 class FunctionCall: public Statement {
@@ -246,7 +247,20 @@ class String: public Statement {
         std::string value;
 };
 
+class Dot: public Statement {
+	public:
+		Dot();
+		Dot(Statement*, Statement*);
+		std::string toString();
+		std::string toTreeString();
+		ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&);
+	private:
+		Statement* LHS;
+		Statement* RHS;
+};
+
 void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);
+void parseDotOperator(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue);
 void parseNum(Tokens& tokens, std::vector<StatementHelper>& queue);
 void parseString(Tokens&, std::vector<StatementHelper>&);
 void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue);

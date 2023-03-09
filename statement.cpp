@@ -27,6 +27,7 @@ void parseVariableOrFunctionCall(Tokens& tokens, std::vector<StatementHelper>& q
 	}
 }
 
+
 void parseMultiplication(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue) {
 	Token current = tokens.current();
 	Multiplication* mult = new Multiplication();
@@ -82,9 +83,19 @@ void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 	std::string functionName = current.value;
 	tokens.eat(); // eating function name
 	tokens.eat(); // eating left parenthesis
-	Params params = parseParams(tokens);
+	Params params;
+	current = tokens.current();
+	next = tokens.next();
+	if (tokens.current().get_type() != RPAREN) {
+		params = parseParams(tokens);
+	}
+	else {
+		std::vector<Statement*> empty;
+		params = Params(empty);
+	}
 	// Construct functionCall object and eat right parenthesis
 	FunctionCall* func = new FunctionCall(functionName, params);
+	func->setType(FUNC_TYPE);
 	StatementHelper helper("functionCall", func);
 	current = tokens.current();
 	if (current.get_type() != RPAREN) {
@@ -93,6 +104,14 @@ void parseFunctionCall(Tokens& tokens, std::vector<StatementHelper>& queue){
 	tokens.eat();
 	queue.push_back(helper);
 
+}
+
+void parseDotOperator(Tokens& tokens, std::stack<StatementHelper>& operatorStack, std::vector<StatementHelper>& queue) {
+	Dot* dot_op = new Dot();
+	tokens.eat(); // eat dot operator
+	StatementHelper helper(".", dot_op);
+	pushOperatorToStack(operatorStack, helper, queue);
+	
 }
 
 void parseEquality(Tokens& tokens, std::stack<StatementHelper>& operators, std::vector<StatementHelper>& queue){
@@ -449,6 +468,7 @@ std::string FunctionCall::toTreeString() {
 	return "FunctionCall(" + this->functionName + ";" + this->params.toTreeString() + ")";
 }
 
+
 Multiplication::Multiplication(){}
 
 Multiplication::Multiplication(Statement* LHS, Statement* RHS){
@@ -475,7 +495,9 @@ std::string Params::toString(){
 	for (auto stm: this->params){
 		out += stm->toString() + ";";
 	}
-	out.pop_back();
+	if (out.length()>0) {
+		out.pop_back();
+	}
 	return out;
 }
 
@@ -484,8 +506,19 @@ std::string Params::toTreeString(){
 	for (auto stm: this->params){
 		param_string += stm->toTreeString() + ";";
 	}
-	param_string.pop_back();
+	if (param_string.length()>0) {
+		param_string.pop_back();
+	}
 	return "Params(" + param_string + ")";
+}
+
+void Params::addParamAtFront(Statement* new_stm) {
+	std::vector<Statement*> new_params;
+	new_params.push_back(new_stm);
+	for (auto stm: this->params) {
+		new_params.push_back(stm);
+	}
+	this->params = new_params;
 }
 
 
@@ -615,4 +648,19 @@ std::string String::toString() {
 
 std::string String::toTreeString() {
     return "String(" + this->value + ")";
+}
+
+Dot::Dot() {};
+
+Dot::Dot(Statement* lhs, Statement* rhs){
+	this->LHS = lhs;
+	this->RHS = rhs;
+}
+
+std::string Dot::toString() {
+	return "Dot()";
+}
+
+std::string Dot::toTreeString() {
+	return "Dot(" + this->LHS->toTreeString() + ";" + this->RHS->toTreeString() + ")";
 }
