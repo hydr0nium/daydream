@@ -22,7 +22,8 @@ enum ValueType {
 	FLOAT_TYPE,
     BOOL_TYPE,
 	STRING_TYPE,
-	OBJECT_VALUE_TYPE // need to be implemented
+    FUNC_TYPE,
+	OBJECT_VALUE_TYPE // needs to be implemented
 
 };
 
@@ -133,6 +134,8 @@ std::string plusStringInt(std::string, std::string);
 std::string plusIntString(std::string, std::string);
 std::string plusIntInt(std::string, std::string);
 std::string plusStringString(std::string, std::string);
+std::string plusBoolString(std::string, std::string);
+std::string plusStringBool(std::string, std::string);
 std::string divideIntInt(std::string, std::string);
 ReturnValue evalFuncBlock(VarScope&, VarScope&, FuncScope&, FuncScope&, Block*);
 ReturnValue evalNonFuncBlock(VarScope&, VarScope&, FuncScope&, FuncScope&, Block*);

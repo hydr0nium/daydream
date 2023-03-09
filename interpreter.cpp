@@ -212,9 +212,17 @@ ReturnValue Plus::eval(VarScope& local_variable_scope, VarScope& global_variable
         ValueObject* val = new PrimitiveValue(ret, STRING_TYPE);
         return ReturnValue(PRIMITIVE_TYPE, val);
     }
+    if (leftType == BOOL_TYPE && rightType == STRING_TYPE) {
+        ret = plusBoolString(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, STRING_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
+    }
+    if (leftType == STRING_TYPE && rightType == BOOL_TYPE) {
+        ret = plusStringBool(leftValue->getValue(), rightValue->getValue());
+        ValueObject* val = new PrimitiveValue(ret, STRING_TYPE);
+        return ReturnValue(PRIMITIVE_TYPE, val);
+    }
     else {
-        std::cout << std::endl;
-        std::cout << lhs.getType() << " " << rhs.getType() << std::endl;
         eval_error("Addition does not support: " + leftValue->getValue() + "+" + rightValue->getValue(), 7);
     }
 
@@ -245,6 +253,14 @@ std::string plusStringInt(std::string lhs, std::string rhs) {
 }
 
 std::string plusStringString(std::string lhs, std::string rhs) {
+    return lhs + rhs;
+}
+
+std::string plusBoolString(std::string lhs, std::string rhs) {
+    return lhs + rhs;
+}
+
+std::string plusStringBool(std::string lhs, std::string rhs) {
     return lhs + rhs;
 }
 
@@ -679,6 +695,31 @@ ReturnValue VariableDeclaration::eval(VarScope& local_variable_scope, VarScope& 
     ValueObject* scp = new ScopeValue(var);
     ReturnValue ret = ReturnValue(VAR_ASSIGNMENT_TYPE, scp);
     return ret;
+}
+
+ReturnValue Dot::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
+
+    if(RHS->getType() != FUNC_TYPE) {
+        eval_error("<function>", "no function type", 9450);
+    }
+
+    ReturnValue lhs = LHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
+    FunctionCall* RHS = (FunctionCall*) this->RHS;
+    if (lhs.getType() == PRIMITIVE_TYPE) {
+        
+        PrimitiveValue* pval = (PrimitiveValue*) lhs.getValueObj();
+        std::string mangle = "__" + enum_to_string(pval->getType()) + "__";
+        RHS->functionName = mangle + RHS->functionName;
+        Statement* stm = convertReturnToExpression(lhs);
+        RHS->params.addParamAtFront(stm);
+        ReturnValue ret = RHS->eval(local_variable_scope, global_variable_scope, local_function_scope, global_function_scope);
+        delete stm;
+        return ret;
+    }
+    else {
+        eval_error("This is a temporary message", 238794);
+    }
+    return ReturnValue();
 }
 
 ReturnValue If::eval(VarScope& local_variable_scope, VarScope& global_variable_scope, FuncScope& local_function_scope, FuncScope& global_function_scope) {
