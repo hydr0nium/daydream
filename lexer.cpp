@@ -197,6 +197,13 @@ Tokens Lexer::lex(std::string programm) {
 			tokens.push_back(token);
 			pos++;
 		}
+		// Scanning for dot
+		else if (programm[pos]=='.') {
+			TokenType type = DOT;
+			Token token(type, ".");
+			tokens.push_back(token);
+			pos++;
+		}
 		// Scanning for single quote 
 		else if (programm[pos]=='\''){
 			TokenType type = STRING;
@@ -220,7 +227,14 @@ Tokens Lexer::lex(std::string programm) {
 
 			// "Start reading string until another " is read"
 			while(programm[pos]!='"'){
-				value += programm[pos];
+				if (programm[pos]=='\\'){
+					value += lexEscapeSequence(programm[pos+1], pos+1);
+					pos++;
+				}
+				else {
+					value += programm[pos];
+				}
+				
 				pos++;
 			}
 			Token token(type, value);
@@ -302,4 +316,18 @@ void Tokens::print() {
 	for (auto token: this->tokens) {
 		std::cout << token.value << std::endl;
 	}
+}
+
+std::string lexEscapeSequence(char escape_literal, int pos) {
+	if (escape_literal == 'n') {
+		return "\n";
+	}
+	if (escape_literal == 't') {
+		return "\t";
+	}
+	else {
+		lex_error("Expected sequence escape literal at pos: " + std::to_string(pos) + ", but found: " + std::to_string(escape_literal));
+		exit(1);
+	}
+	
 }

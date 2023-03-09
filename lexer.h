@@ -25,6 +25,7 @@ enum TokenType {
 	GREATER,
 	SEMICOLON,
 	STRING,
+	DOT,
 	END
 };
 
@@ -62,5 +63,7 @@ class Lexer {
 		Tokens lex(std::string programm);
 		void print(Tokens);
 };
+
+std::string lexEscapeSequence(char, int);
 
 #endif
