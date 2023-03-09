@@ -83,6 +83,10 @@ ReversePolishNotation convertInfixToRPN(Tokens& tokens, Token* optional_token_be
 			parseMinus(tokens, operatorStack, rpn_queue, was_operator);
 			// was_operator set in parseMinus
 			break;
+		case DOT:
+			parseDotOperator(tokens, operatorStack, rpn_queue);
+			was_operator = true;
+			break;
 		case LPAREN:
 			parseLParen(tokens, operatorStack, rpn_queue);
 			// Parenthesis don't change if there was a operator or not
@@ -93,7 +97,7 @@ ReversePolishNotation convertInfixToRPN(Tokens& tokens, Token* optional_token_be
 			break;
 		default:
 			// Temporary Solution
-			parse_error("Valid Statement Token", current.value, tokens);
+			parse_error("Invalid Statement Token", current.value, tokens);
 		}
 		current = tokens.current();
 			
@@ -291,6 +295,18 @@ Statement* parseRPN(ReversePolishNotation rpn, Tokens tokens){
 			statement_stack.pop();
 			Equality* eq_stm = new Equality(LHS, RHS);
 			statement_stack.push(eq_stm);
+			delete stm;
+		}
+		else if (statement_type == ".") {
+			if ( !(statement_stack.size()>=2) ){
+				parse_error("Could not convert RPN to AST. Not enough values on the statement stack to form a equality object", tokens);
+			}
+			Statement* RHS = statement_stack.top();
+			statement_stack.pop();
+			Statement* LHS = statement_stack.top();
+			statement_stack.pop();
+			Dot* dot_stm = new Dot(LHS, RHS);
+			statement_stack.push(dot_stm);
 			delete stm;
 		}
 		
