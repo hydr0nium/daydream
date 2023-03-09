@@ -53,6 +53,10 @@ class Statement: public Expression {
 		virtual std::string toString() = 0;
 		virtual std::string toTreeString() = 0;
 		virtual ReturnValue eval(VarScope&, VarScope&, FuncScope&, FuncScope&) = 0;
+		void setType(ValueType);
+		ValueType getType();
+	private:
+		ValueType type;
 
 };
 

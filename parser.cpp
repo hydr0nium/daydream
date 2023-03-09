@@ -656,3 +656,13 @@ Debug::Debug() {};
 std::string Debug::toTreeString() {
 	return "Debug()";
 }
+
+void Statement::setType(ValueType type) {
+	this->type = type;
+}
+
+
+ValueType Statement::getType() {
+	return this->type;
+}
+
