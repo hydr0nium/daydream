@@ -219,11 +219,35 @@ void pushOperatorToStack(std::stack<StatementHelper>& operatorStack, StatementHe
 
 }
 
+Statement* convertReturnToExpression(ReturnValue ret) {
+	if (ret.getType() == PRIMITIVE_TYPE) {
+		PrimitiveValue* pval = (PrimitiveValue*) ret.getValueObj();
+		std::string value = pval->getValue();
+		switch (pval->getType())
+		{
+		case INT_TYPE:
+			return new Number(value);
+		case STRING_TYPE:
+			return new String(value);
+		case BOOL_TYPE:
+			return new Bool(value);
+		default:
+			eval_error("Can not convert type to object", 9876);
+			exit(1);
+		}
+	}
+	else {
+		eval_error("THIS IS A TEMPORARY ERROR FOR USE WITH OBJECT LATER THX GG", 381487);
+		exit(1);
+	}
+}
+
 int getOperatorPrecedence(StatementHelper& op){
 
 		// Operator Precedence 
 		/*
 		Highest
+		7 .
 		6 not
 		5 **
 		4 /, *
@@ -235,7 +259,10 @@ int getOperatorPrecedence(StatementHelper& op){
 		*/
 
 	std::string op_value = op.type;
-	if (op_value == "not"){
+	if (op_value == ".") {
+		return 7;
+	}
+	else if (op_value == "not"){
 		return 6;
 	}
 	else if (op_value == "**"){

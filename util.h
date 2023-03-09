@@ -25,6 +25,7 @@ void debug(Tokens);
 std::string boolToString(bool);
 bool stringToBool(std::string);
 int ipow(int, int);
+Statement* convertReturnToExpression(ReturnValue);
 std::optional<Token> lex_keyword(std::string lexing_string, int& pos);
 
 #endif
