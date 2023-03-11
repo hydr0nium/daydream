@@ -320,7 +320,7 @@ ReturnValue Equality::eval(VarScope& local_variable_scope, VarScope& global_vari
     ValueType leftType = leftValue->getType();
     ValueType rightType = rightValue->getType();
 
-    ret = boolToString(leftValue->getValue() == rightValue->getValue() && leftValue->getValue() == rightValue->getValue());
+    ret = boolToString(leftValue->getValue() == rightValue->getValue() && leftType==rightType);
     ValueObject* val = new PrimitiveValue(ret, BOOL_TYPE);
     return ReturnValue(PRIMITIVE_TYPE, val);
 
