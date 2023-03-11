@@ -60,8 +60,6 @@ end
 ```
 is the same as above.
 
-(Single line if, while and for is currently broken)
-
 ## For Expressions
 
 Similar to an if expression we can define a for expression:
@@ -86,6 +84,16 @@ while (a==0):
 end
 ```
 This will print `hello world`
+
+## Single Line Expression
+
+It is possible to do expressions like if, while and for in a single line:
+
+```
+while true: "hello"
+for (i = 0; i<10;i = i+1): i
+if (true): "is_true"
+```
 
 ## Function Definitions
 
@@ -133,8 +141,31 @@ This will print `9`.
 
 ## "Advanced Features"
 
+If you use the `.` between an statement and a function then this will be treated as a type method. This means the expression to the left of the dot will be evaluated and then passed as the first parameter to a special type mangled method:
+
+```
+def __string__print(this): this + "\n"
+
+my_string = "hello world"
+my_string.print()
+ 
+```
+
+This will print `hello world`. Note that the method that is called is mangled with the type. So my_string will be evaluated as a string and hence the print method needs to be mangled with `__string__`. Similarly you can mangle ints with `__int__` and bools with `__bool__`. Also note that the first parameter as stated before is the expression that called the function. The name of this variable does not matter. Here is another example:
+
+```
+def __bool__is_true(some_var):
+  if some_var: "This is true\n"
+  if not some_var: "This is false\n"
+end
+true.is_true()
+```
+This will output `This is true`.
+
+## Other Stuff
+
 - If you add two strings they get concatenated.
-- If you add a int and a string you concate the two.
+- If you add a int and a string you concat the two.
 - You can use a logical and with `and` and a logical or with `or`
 - The bools are `true` and `false`
 - Variables inside a function definition do not leak to the outside and are bound to the function
@@ -152,3 +183,4 @@ Currently daydream does not support floats.
 - Implement Syscall Support
 - Implement Libraries
 - Implement Floats
+- Implement Lists / Arrays
